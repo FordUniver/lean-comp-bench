@@ -1,22 +1,26 @@
 # Build artifacts
 *.o
 *.hi
+*_stub.h
 
-# C/C++ binaries (no extension)
+# C/C++ binaries
 list-sort/c/sort
 list-sort/cpp/sort
-hashmap-insert/c/benchmark
+hashmap-insert/cpp/benchmark
 
 # Haskell binaries
 list-sort/haskell/sort
 hashmap-insert/haskell/hashbench
-*_stub.h
 
 # Rust
 **/target/
 
 # Lean
 **/.lake/
+**/build/
 
 # Results
 results/
+
+# Slurm
+slurm-*.out
