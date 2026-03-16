@@ -1,5 +1,5 @@
 -- Sorting benchmark — portable across all Lean 4 versions
--- Uses getD (safe read) + set\! (panicking write) which work v4.0–v4.28
+-- Uses getD (safe read) + set! (panicking write) which work v4.0–v4.28
 
 structure Lcg where
   state : UInt64
@@ -24,7 +24,7 @@ def generateArray (n : Nat) (seed : UInt64) : Array UInt64 := Id.run do
 @[inline] def swp (a : Array UInt64) (i j : Nat) : Array UInt64 :=
   let vi := g a i
   let vj := g a j
-  (a.set\! i vj).set\! j vi
+  (a.set! i vj).set! j vi
 
 @[inline]
 def doPartition (arr : Array UInt64) (lo hi : Nat) : Array UInt64 × Nat := Id.run do
@@ -59,4 +59,4 @@ def main : IO Unit := do
   let cs := checksum sorted
   let t1 ← IO.monoNanosNow
   let ms := (t1 - t0).toFloat / 1e6
-  IO.println s\!"quick n={n} {ms}ms checksum={cs}"
+  IO.println s!"quick n={n} {ms}ms checksum={cs}"
