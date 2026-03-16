@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/scratch/htc/cspiegel/lean-comp-bench"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
 RESULTS="$ROOT/version-results.txt"
 export PATH="$HOME/.local/bin:$PATH"
 
