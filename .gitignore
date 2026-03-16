@@ -1,0 +1,22 @@
+# Build artifacts
+*.o
+*.hi
+
+# C/C++ binaries (no extension)
+list-sort/c/sort
+list-sort/cpp/sort
+hashmap-insert/c/benchmark
+
+# Haskell binaries
+list-sort/haskell/sort
+hashmap-insert/haskell/hashbench
+*_stub.h
+
+# Rust
+**/target/
+
+# Lean
+**/.lake/
+
+# Results
+results/

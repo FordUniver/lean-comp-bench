@@ -1,0 +1,8 @@
+name = "SortBench"
+version = "0.1.0"
+defaultTargets = ["sortbench"]
+
+[[lean_exe]]
+name = "sortbench"
+root = "Main"
+moreLeancArgs = ["-O2"]

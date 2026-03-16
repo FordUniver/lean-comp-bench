@@ -1,0 +1,13 @@
+name = "HashBench"
+version = "0.1.0"
+defaultTargets = ["hashbench"]
+
+[[require]]
+name = "batteries"
+git = "https://github.com/leanprover-community/batteries"
+rev = "main"
+
+[[lean_exe]]
+name = "hashbench"
+root = "Main"
+moreLeancArgs = ["-O2"]
