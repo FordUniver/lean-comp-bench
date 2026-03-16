@@ -1,4 +1,6 @@
--- Sorting benchmark for Lean v4.0–v4.19 (uses get!/swap!)
+-- Sorting benchmark — portable across all Lean 4 versions
+-- Uses getD (safe read) + set\! (panicking write) which work v4.0–v4.28
+
 structure Lcg where
   state : UInt64
 
@@ -17,16 +19,23 @@ def generateArray (n : Nat) (seed : UInt64) : Array UInt64 := Id.run do
     arr := arr.push v
   return arr
 
+@[inline] def g (a : Array UInt64) (i : Nat) : UInt64 := a.getD i 0
+
+@[inline] def swp (a : Array UInt64) (i j : Nat) : Array UInt64 :=
+  let vi := g a i
+  let vj := g a j
+  (a.set\! i vj).set\! j vi
+
 @[inline]
 def doPartition (arr : Array UInt64) (lo hi : Nat) : Array UInt64 × Nat := Id.run do
-  let pivot := arr.get! hi
+  let pivot := g arr hi
   let mut a := arr
   let mut i := lo
   for j in [lo:hi] do
-    if a.get! j <= pivot then
-      a := a.swap! i j
+    if g a j <= pivot then
+      a := swp a i j
       i := i + 1
-  a := a.swap! i hi
+  a := swp a i hi
   return (a, i)
 
 partial def doQuicksort (a : Array UInt64) (lo hi : Int) : Array UInt64 :=
@@ -50,4 +59,4 @@ def main : IO Unit := do
   let cs := checksum sorted
   let t1 ← IO.monoNanosNow
   let ms := (t1 - t0).toFloat / 1e6
-  IO.println s!"quick n={n} {ms}ms checksum={cs}"
+  IO.println s\!"quick n={n} {ms}ms checksum={cs}"
