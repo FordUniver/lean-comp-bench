@@ -16,74 +16,6 @@ echo "=== Lean version progression (quicksort n=1000000) ===" | tee -a "$RESULTS
 echo "C baseline:" | tee -a "$RESULTS"
 hyperfine --warmup 1 --min-runs 5 -n "C" "$ROOT/list-sort/c/sort quick 1000000" 2>&1 | tee -a "$RESULTS"
 
-# Lean source with get!/swap! (old API, v4.0-v4.19)
-OLD_LEAN='structure Lcg where state : UInt64
-@[inline] def Lcg.new (seed : UInt64) : Lcg := { state := seed }
-@[inline] def Lcg.next (rng : Lcg) : UInt64 × Lcg :=
-  let s := rng.state * 6364136223846793005 + 1442695040888963407; (s, { state := s })
-def generateArray (n : Nat) (seed : UInt64) : Array UInt64 := Id.run do
-  let mut rng := Lcg.new seed; let mut arr := Array.mkEmpty n
-  for _ in [:n] do let (v, r) := rng.next; rng := r; arr := arr.push v; return arr
-@[inline] def doPartition (arr : Array UInt64) (lo hi : Nat) : Array UInt64 × Nat := Id.run do
-  let pivot := arr.get! hi; let mut a := arr; let mut i := lo
-  for j in [lo:hi] do if a.get! j <= pivot then a := a.swap! i j; i := i + 1
-  a := a.swap! i hi; return (a, i)
-partial def doQuicksort (a : Array UInt64) (lo hi : Int) : Array UInt64 :=
-  if lo >= hi then a else
-  let (ap, p) := doPartition a lo.toNat hi.toNat
-  doQuicksort (doQuicksort ap lo (p - 1)) (Int.ofNat (p + 1)) hi
-def checksum (a : Array UInt64) : UInt64 := Id.run do
-  let mut h : UInt64 := 0; for x in a do h := h * 131 + x; return h
-def main : IO Unit := do
-  let n := 1000000; let arr := generateArray n 42
-  let t0 <- IO.monoNanosNow; let sorted := doQuicksort arr 0 (n - 1)
-  let cs := checksum sorted; let t1 <- IO.monoNanosNow
-  let ms := (t1 - t0).toFloat / 1e6
-  IO.println s!"quick n={n} {ms}ms checksum={cs}"'
-
-# Lean source with getD/setIfInBounds (new API, v4.20+)
-NEW_LEAN='structure Lcg where state : UInt64
-@[inline] def Lcg.new (seed : UInt64) : Lcg := { state := seed }
-@[inline] def Lcg.next (rng : Lcg) : UInt64 × Lcg :=
-  let s := rng.state * 6364136223846793005 + 1442695040888963407; (s, { state := s })
-def generateArray (n : Nat) (seed : UInt64) : Array UInt64 := Id.run do
-  let mut rng := Lcg.new seed; let mut arr := Array.mkEmpty n
-  for _ in [:n] do let (v, r) := rng.next; rng := r; arr := arr.push v; return arr
-@[inline] def g (a : Array UInt64) (i : Nat) : UInt64 := a.getD i 0
-@[inline] def s (a : Array UInt64) (i : Nat) (v : UInt64) : Array UInt64 := a.setIfInBounds i v
-@[inline] def swp (a : Array UInt64) (i j : Nat) : Array UInt64 :=
-  let vi := g a i; let vj := g a j; s (s a i vj) j vi
-@[inline] def doPartition (arr : Array UInt64) (lo hi : Nat) : Array UInt64 × Nat := Id.run do
-  let pivot := g arr hi; let mut a := arr; let mut i := lo
-  for j in [lo:hi] do if g a j <= pivot then a := swp a i j; i := i + 1
-  a := swp a i hi; return (a, i)
-partial def doQuicksort (a : Array UInt64) (lo hi : Int) : Array UInt64 :=
-  if lo >= hi then a else
-  let (ap, p) := doPartition a lo.toNat hi.toNat
-  doQuicksort (doQuicksort ap lo (p - 1)) (Int.ofNat (p + 1)) hi
-def checksum (a : Array UInt64) : UInt64 := Id.run do
-  let mut h : UInt64 := 0; for x in a do h := h * 131 + x; return h
-def main : IO Unit := do
-  let n := 1000000; let arr := generateArray n 42
-  let t0 <- IO.monoNanosNow; let sorted := doQuicksort arr 0 (n - 1)
-  let cs := checksum sorted; let t1 <- IO.monoNanosNow
-  let ms := (t1 - t0).toFloat / 1e6
-  IO.println s!"quick n={n} {ms}ms checksum={cs}"'
-
-# Old lakefile format (v4.0-v4.6)
-OLD_LAKE='import Lake
-open Lake DSL
-package SortBench
-@[default_target]
-lean_exe sortbench where root := `Main'
-
-# New lakefile format (v4.7+)
-NEW_LAKE='name = "SortBench"
-version = "0.1.0"
-[[lean_exe]]
-name = "sortbench"
-root = "Main"'
-
 for VER in "${VERSIONS[@]}"; do
     echo ""
     echo "--- Lean $VER ---" | tee -a "$RESULTS"
@@ -93,18 +25,17 @@ for VER in "${VERSIONS[@]}"; do
     TDIR=$(mktemp -d)
     echo "leanprover/lean4:$VER" > "$TDIR/lean-toolchain"
 
-    # Select API version
+    # Copy source files from version-src/
     if [[ "$VER" < "v4.20" ]]; then
-        echo "$OLD_LEAN" > "$TDIR/Main.lean"
+        cp "$ROOT/version-src/Main-old.lean" "$TDIR/Main.lean"
     else
-        echo "$NEW_LEAN" > "$TDIR/Main.lean"
+        cp "$ROOT/version-src/Main-new.lean" "$TDIR/Main.lean"
     fi
 
-    # Select lakefile format
     if [[ "$VER" < "v4.7" ]]; then
-        echo "$OLD_LAKE" > "$TDIR/lakefile.lean"
+        cp "$ROOT/version-src/lakefile-old.lean" "$TDIR/lakefile.lean"
     else
-        echo "$NEW_LAKE" > "$TDIR/lakefile.toml"
+        cp "$ROOT/version-src/lakefile-new.toml" "$TDIR/lakefile.toml"
     fi
 
     echo "  Building Lean $VER..."
