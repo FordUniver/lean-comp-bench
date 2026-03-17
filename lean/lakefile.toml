@@ -1,0 +1,7 @@
+name = "Bench"
+version = "0.1.0"
+defaultTargets = ["bfs_barebones"]
+
+[[lean_exe]]
+name = "bfs_barebones"
+root = "BfsBarebones"

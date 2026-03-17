@@ -3,24 +3,25 @@
 *.hi
 *_stub.h
 
-# C/C++ binaries
-list-sort/c/sort
-list-sort/cpp/sort
-hashmap-insert/cpp/benchmark
+# C++ binaries
+cpp/*_barebones
+cpp/*_idiomatic
 
 # Haskell binaries
-list-sort/haskell/sort
-hashmap-insert/haskell/hashbench
+haskell/*Barebones
+haskell/*Idiomatic
 
 # Rust
-**/target/
+rust/target/
 
 # Lean
-**/.lake/
-**/build/
+lean/.lake/
 
 # Results
 results/
+
+# Generated inputs (regen with input/gen_input.py)
+input/*.txt
 
 # Slurm
 slurm-*.out
