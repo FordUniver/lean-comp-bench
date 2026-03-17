@@ -1,18 +1,28 @@
 {-# LANGUAGE BangPatterns #-}
 -- BFS benchmark — barebones (mutable unboxed vectors, unsafeRead/unsafeWrite)
+-- Integer widths: Word32 for node IDs/offsets/adjacency, Int64 for distances.
 module Main where
 
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Vector.Unboxed.Mutable as MV
-import qualified Data.Vector.Unboxed as V
 import Data.Int (Int64)
+import Data.Word (Word32)
 import System.Environment (getArgs)
 import System.Clock (getTime, Clock(Monotonic), toNanoSecs)
+import Numeric (showFFloat)
 
 readInt :: BS.ByteString -> (Int, BS.ByteString)
 readInt !bs = case BS.readInt (BS.dropWhile (< '0') bs) of
     Just (!n, !rest) -> (n, rest)
     Nothing -> error "parse error"
+
+i2w :: Int -> Word32
+i2w = fromIntegral
+{-# INLINE i2w #-}
+
+w2i :: Word32 -> Int
+w2i = fromIntegral
+{-# INLINE w2i #-}
 
 main :: IO ()
 main = do
@@ -31,23 +41,23 @@ run file = do
         (!m, r1) = readInt r0
 
     -- Count degrees
-    deg <- MV.replicate n (0 :: Int)
+    deg <- MV.replicate n (0 :: Word32)
     let readEdges !buf !rem !i
           | i >= m    = return rem
           | otherwise = do
               let (!u, r2) = readInt rem
                   (!v, r3) = readInt r2
-              MV.unsafeWrite buf (2*i) u
-              MV.unsafeWrite buf (2*i+1) v
+              MV.unsafeWrite buf (2*i) (i2w u)
+              MV.unsafeWrite buf (2*i+1) (i2w v)
               MV.unsafeRead deg u >>= MV.unsafeWrite deg u . (+1)
               MV.unsafeRead deg v >>= MV.unsafeWrite deg v . (+1)
               readEdges buf r3 (i+1)
 
-    edgeBuf <- MV.new (2*m)
+    edgeBuf <- MV.new (2*m) :: IO (MV.IOVector Word32)
     _ <- readEdges edgeBuf r1 0
 
     -- Build CSR
-    offset <- MV.new (n+1) :: IO (MV.IOVector Int)
+    offset <- MV.new (n+1) :: IO (MV.IOVector Word32)
     MV.unsafeWrite offset 0 0
     let buildOffset !i
           | i >= n    = return ()
@@ -59,22 +69,24 @@ run file = do
     buildOffset 0
 
     total <- MV.unsafeRead offset n
-    adj <- MV.new total :: IO (MV.IOVector Int)
-    pos <- MV.replicate n (0 :: Int)
+    adj <- MV.new (w2i total) :: IO (MV.IOVector Word32)
+    pos <- MV.replicate n (0 :: Word32)
 
     let fillAdj !i
           | i >= m    = return ()
           | otherwise = do
               !u <- MV.unsafeRead edgeBuf (2*i)
               !v <- MV.unsafeRead edgeBuf (2*i+1)
-              !ou <- MV.unsafeRead offset u
-              !pu <- MV.unsafeRead pos u
-              MV.unsafeWrite adj (ou+pu) v
-              MV.unsafeWrite pos u (pu+1)
-              !ov <- MV.unsafeRead offset v
-              !pv <- MV.unsafeRead pos v
-              MV.unsafeWrite adj (ov+pv) u
-              MV.unsafeWrite pos v (pv+1)
+              let !ui = w2i u
+                  !vi = w2i v
+              !ou <- MV.unsafeRead offset ui
+              !pu <- MV.unsafeRead pos ui
+              MV.unsafeWrite adj (w2i (ou+pu)) v
+              MV.unsafeWrite pos ui (pu+1)
+              !ov <- MV.unsafeRead offset vi
+              !pv <- MV.unsafeRead pos vi
+              MV.unsafeWrite adj (w2i (ov+pv)) u
+              MV.unsafeWrite pos vi (pv+1)
               fillAdj (i+1)
     fillAdj 0
 
@@ -86,7 +98,7 @@ run file = do
 
     visited <- MV.replicate n False
     dist <- MV.replicate n (0 :: Int64)
-    queue <- MV.new n :: IO (MV.IOVector Int)
+    queue <- MV.new n :: IO (MV.IOVector Word32)
     MV.unsafeWrite visited 0 True
     MV.unsafeWrite queue 0 0
 
@@ -94,19 +106,21 @@ run file = do
           | qh >= qt  = return (qt, dsum)
           | otherwise = do
               !v <- MV.unsafeRead queue qh
-              !lo <- MV.unsafeRead offset v
-              !hi <- MV.unsafeRead offset (v+1)
-              !dv <- MV.unsafeRead dist v
+              let !vi = w2i v
+              !lo <- MV.unsafeRead offset vi
+              !hi <- MV.unsafeRead offset (vi+1)
+              !dv <- MV.unsafeRead dist vi
               let inner !j !qt' !ds
                     | j >= hi   = bfs (qh+1) qt' ds
                     | otherwise = do
-                        !w <- MV.unsafeRead adj j
-                        !vis <- MV.unsafeRead visited w
+                        !w <- MV.unsafeRead adj (w2i j)
+                        let !wi = w2i w
+                        !vis <- MV.unsafeRead visited wi
                         if vis then inner (j+1) qt' ds
                         else do
-                          MV.unsafeWrite visited w True
+                          MV.unsafeWrite visited wi True
                           let !dw = dv + 1
-                          MV.unsafeWrite dist w dw
+                          MV.unsafeWrite dist wi dw
                           MV.unsafeWrite queue qt' w
                           inner (j+1) (qt'+1) (ds + dw)
               inner lo qt dsum
@@ -115,5 +129,6 @@ run file = do
     t3 <- getTime Monotonic
     let computeMs = fromIntegral (toNanoSecs t3 - toNanoSecs t2) / 1e6 :: Double
 
-    putStrLn $ "read=" ++ show readMs ++ "ms compute=" ++ show computeMs
-              ++ "ms checksum=" ++ show distSum ++ " visited=" ++ show nvisited
+    putStrLn $ "read=" ++ showFFloat (Just 1) readMs "" ++ "ms compute="
+              ++ showFFloat (Just 1) computeMs "" ++ "ms checksum=" ++ show distSum
+              ++ " visited=" ++ show nvisited

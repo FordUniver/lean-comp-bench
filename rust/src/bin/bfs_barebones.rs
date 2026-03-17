@@ -3,6 +3,13 @@ use std::env;
 use std::fs;
 use std::time::Instant;
 
+#[inline(always)]
+fn parse_usize(bytes: &[u8]) -> usize {
+    let mut n: usize = 0;
+    for &b in bytes { n = n * 10 + (b - b'0') as usize; }
+    n
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 { eprintln!("Usage: {} <graph_file>", args[0]); std::process::exit(1); }
@@ -10,18 +17,19 @@ fn main() {
     // ── Read ─────────────────────────────────────────────────────────────────
     let t0 = Instant::now();
 
-    let contents = fs::read_to_string(&args[1]).unwrap();
-    let mut iter = contents.split_ascii_whitespace();
-    let n: usize = iter.next().unwrap().parse().unwrap();
-    let m: usize = iter.next().unwrap().parse().unwrap();
+    let bytes = fs::read(&args[1]).unwrap();
+    let mut iter = bytes.split(|&b| b == b' ' || b == b'\n' || b == b'\r' || b == b'\t')
+                        .filter(|s| !s.is_empty());
+    let n: usize = parse_usize(iter.next().unwrap());
+    let m: usize = parse_usize(iter.next().unwrap());
 
     // Build CSR adjacency
     let mut deg = vec![0u32; n];
     let mut eu = Vec::with_capacity(m);
     let mut ev = Vec::with_capacity(m);
     for _ in 0..m {
-        let u: usize = iter.next().unwrap().parse().unwrap();
-        let v: usize = iter.next().unwrap().parse().unwrap();
+        let u: usize = parse_usize(iter.next().unwrap());
+        let v: usize = parse_usize(iter.next().unwrap());
         deg[u] += 1;
         deg[v] += 1;
         eu.push(u);

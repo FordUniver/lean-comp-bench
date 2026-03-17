@@ -10,12 +10,20 @@ cpp/*_idiomatic
 # Haskell binaries
 haskell/*Barebones
 haskell/*Idiomatic
+haskell/bfs_*
 
 # Rust
 rust/target/
 
 # Lean
 lean/.lake/
+
+# Baseline binaries
+baseline/*/c/sort
+baseline/*/cpp/sort
+baseline/*/cpp/benchmark
+baseline/*/haskell/sort
+baseline/*/haskell/hashbench
 
 # Results
 results/
