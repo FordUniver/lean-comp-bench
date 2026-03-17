@@ -3,14 +3,17 @@
 *.hi
 *_stub.h
 
-# C++ binaries
-cpp/*_barebones
-cpp/*_idiomatic
+# C++ binaries (source files are *.cpp, binaries have no extension)
+cpp/bfs
+cpp/color_refine
+cpp/point_in_hull
+cpp/face_enum
 
 # Haskell binaries
-haskell/*Barebones
-haskell/*Idiomatic
-haskell/bfs_*
+haskell/Bfs
+haskell/ColorRefine
+haskell/PointInHull
+haskell/FaceEnum
 
 # Rust
 rust/target/
@@ -28,7 +31,7 @@ baseline/*/haskell/hashbench
 # Results
 results/
 
-# Generated inputs (regen with input/gen_input.py)
+# Generated inputs
 input/*.txt
 
 # Slurm

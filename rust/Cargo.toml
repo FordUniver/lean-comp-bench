@@ -4,17 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "bfs_barebones"
-path = "src/bin/bfs_barebones.rs"
+name = "bfs"
+path = "src/bin/bfs.rs"
 
 [[bin]]
-name = "color_refine_barebones"
-path = "src/bin/color_refine_barebones.rs"
-
-[[bin]]
-name = "bfs_safe"
-path = "src/bin/bfs_safe.rs"
-
-[[bin]]
-name = "color_refine_safe"
-path = "src/bin/color_refine_safe.rs"
+name = "color_refine"
+path = "src/bin/color_refine.rs"

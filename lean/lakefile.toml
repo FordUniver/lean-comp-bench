@@ -1,19 +1,11 @@
 name = "Bench"
 version = "0.1.0"
-defaultTargets = ["bfs_barebones", "bfs_safe", "color_refine_barebones", "color_refine_safe"]
+defaultTargets = ["bfs", "color_refine"]
 
 [[lean_exe]]
-name = "bfs_barebones"
-root = "BfsBarebones"
+name = "bfs"
+root = "Bfs"
 
 [[lean_exe]]
-name = "bfs_safe"
-root = "BfsSafe"
-
-[[lean_exe]]
-name = "color_refine_barebones"
-root = "ColorRefineBarebones"
-
-[[lean_exe]]
-name = "color_refine_safe"
-root = "ColorRefineSafe"
+name = "color_refine"
+root = "ColorRefine"
