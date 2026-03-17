@@ -81,10 +81,10 @@ def main():
     # ── Graphs: 3×3 grid (density × size) ────────────────────────────────
     print("Graphs:")
     graph_grid = {
-        #            small (1K)    medium (100K)   large (1M)
-        "sparse":  [(1000, 1500),  (100_000, 150_000),  (1_000_000, 1_500_000)],
-        "medium":  [(1000, 5000),  (100_000, 500_000),  (1_000_000, 5_000_000)],
-        "dense":   [(1000, 50_000),(100_000, 5_000_000)],
+        #            medium (100K)              large (1M)
+        "sparse":  [(100_000, 150_000),  (1_000_000, 1_500_000)],
+        "medium":  [(100_000, 500_000),  (1_000_000, 5_000_000)],
+        "dense":   [(100_000, 5_000_000)],
     }
     for density, sizes in graph_grid.items():
         for n, m in sizes:
@@ -94,7 +94,7 @@ def main():
     # ── Polygons: 3×3 grid (polygon size × query count) ──────────────────
     print("\nPolygons:")
     poly_sizes = [100, 1_000, 10_000]
-    query_counts = [10_000, 100_000, 1_000_000]
+    query_counts = [100_000, 1_000_000]
     for np in poly_sizes:
         for nq in query_counts:
             name = f"polygon_{np}_{nq // 1000}k.txt"

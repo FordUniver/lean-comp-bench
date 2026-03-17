@@ -87,13 +87,14 @@ def main (args : List String) : IO Unit := do
 
   let mut visited := Array.replicate n false
   let mut dist := Array.replicate n (0 : Int64)
-  let mut queue := Array.mkEmpty n
+  let mut queue := Array.replicate n (0 : UInt32)
   visited := visited.uset' 0 true
-  queue := queue.push (0 : UInt32)
+  queue := queue.uset' 0 (0 : UInt32)
   let mut qhead := 0
+  let mut qtail := 1
   let mut distSum : Int64 := 0
 
-  while h : qhead < queue.size do
+  while qhead < qtail do
     let v := (queue.uget' qhead).toNat
     qhead := qhead + 1
     let lo := (offset.uget' v).toNat
@@ -106,9 +107,10 @@ def main (args : List String) : IO Unit := do
         let dw := dv + 1
         dist := dist.uset' w dw
         distSum := distSum + dw
-        queue := queue.push (UInt32.ofNat w)
+        queue := queue.uset' qtail (UInt32.ofNat w)
+        qtail := qtail + 1
 
   let t3 ← IO.monoNanosNow
   let computeNanos := t3 - t2
 
-  IO.println s!"read={fmtMs readNanos}ms compute={fmtMs computeNanos}ms checksum={distSum} visited={queue.size}"
+  IO.println s!"read={fmtMs readNanos}ms compute={fmtMs computeNanos}ms checksum={distSum} visited={qtail}"

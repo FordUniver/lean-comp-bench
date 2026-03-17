@@ -53,15 +53,14 @@ LANGUAGES = {
 }
 
 GRAPHS = [
-    "sparse_1k", "medium_1k", "dense_1k",
     "sparse_100k", "medium_100k", "dense_100k",
     "sparse_1000k", "medium_1000k",
 ]
 
 POLYGONS = [
-    "100_10k", "100_100k", "100_1000k",
-    "1000_10k", "1000_100k", "1000_1000k",
-    "10000_10k", "10000_100k", "10000_1000k",
+    "100_100k", "100_1000k",
+    "1000_100k", "1000_1000k",
+    "10000_100k", "10000_1000k",
 ]
 
 # Map benchmark -> (input prefix, default inputs, checksum key)
