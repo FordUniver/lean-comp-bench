@@ -30,21 +30,25 @@ LANGUAGES = {
         "bfs": ROOT / "cpp" / "bfs",
         "color_refine": ROOT / "cpp" / "color_refine",
         "point_in_hull": ROOT / "cpp" / "point_in_hull",
+        "face_enum": ROOT / "cpp" / "face_enum",
     },
     "Rust": {
         "bfs": ROOT / "rust" / "target" / "release" / "bfs",
         "color_refine": ROOT / "rust" / "target" / "release" / "color_refine",
         "point_in_hull": ROOT / "rust" / "target" / "release" / "point_in_hull",
+        "face_enum": ROOT / "rust" / "target" / "release" / "face_enum",
     },
     "Haskell": {
         "bfs": ROOT / "haskell" / "Bfs",
         "color_refine": ROOT / "haskell" / "ColorRefine",
         "point_in_hull": ROOT / "haskell" / "PointInHull",
+        "face_enum": ROOT / "haskell" / "FaceEnum",
     },
     "Lean": {
         "bfs": ROOT / "lean" / ".lake" / "build" / "bin" / "bfs",
         "color_refine": ROOT / "lean" / ".lake" / "build" / "bin" / "color_refine",
         "point_in_hull": ROOT / "lean" / ".lake" / "build" / "bin" / "point_in_hull",
+        "face_enum": ROOT / "lean" / ".lake" / "build" / "bin" / "face_enum",
     },
 }
 
@@ -65,6 +69,7 @@ BENCH_CONFIG = {
     "bfs":           ("graph_",   lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
     "color_refine":  ("graph_",   lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
     "point_in_hull": ("polygon_", lambda: [p for p in POLYGONS if "1000_" in p and "100k" in p], "inside"),
+    "face_enum":     ("cube_",    lambda: ["5d", "6d", "7d"], "checksum"),
 }
 
 
