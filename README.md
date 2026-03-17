@@ -25,7 +25,7 @@ Four algorithms from two domains (graph algorithms, polyhedral computation):
 
 ## Principles
 
-Each language uses its idiomatic, responsible style. C++, Rust, and Haskell use bounds-checked array access; Lean uses unchecked access backed by (sorry) proofs, matching what a fully verified implementation would compile to. All four implementations of each algorithm are structurally identical (same CSR construction, same loop structure, same hash function). Checksums are verified across languages on every run.
+Each implementation is intended to be idiomatic and responsible for its language. C++, Rust, and Haskell use bounds-checked array access; Lean uses unchecked access made safe by (sorry) proofs, matching what a fully verified implementation would compile to. All four implementations of each algorithm are structurally identical (same CSR construction, same loop structure, same hash function). Checksums are verified across languages on every run.
 
 All implementations read the same input files. Timing separates I/O from computation; only compute time is reported.
 
