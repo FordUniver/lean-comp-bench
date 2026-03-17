@@ -14,3 +14,7 @@ path = "src/bin/color_refine.rs"
 [[bin]]
 name = "point_in_hull"
 path = "src/bin/point_in_hull.rs"
+
+[[bin]]
+name = "face_enum"
+path = "src/bin/face_enum.rs"
