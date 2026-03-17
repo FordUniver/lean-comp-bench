@@ -16,7 +16,6 @@ def liftPoint (p : ℤ × ℤ) : ℝ × ℝ := (↑p.1, ↑p.2)
 theorem cross2d_intCast (a b : ℤ × ℤ) :
     cross2d (liftPoint a) (liftPoint b) = ↑(cross2d a b) := by
   simp [cross2d, liftPoint]
-  ring
 
 /-- The sign of the cross product is preserved by ℤ → ℝ.
     This is the key bridge: checking non-negativity on ℤ

@@ -5,6 +5,7 @@
 -/
 import Mathlib.Analysis.Convex.Hull
 import Mathlib.Analysis.Convex.Combination
+import Mathlib.Analysis.SpecificLimits.Basic
 
 set_option autoImplicit false
 
@@ -14,8 +15,9 @@ def cross2d {α : Type*} [Ring α] (a b : α × α) : α :=
   a.1 * b.2 - a.2 * b.1
 
 /-- Wrap index modulo n, for polygon edge indexing. -/
-def Fin.nextMod (i : Fin n) : Fin n :=
-  ⟨(i.val + 1) % n, Nat.mod_lt _ (Nat.pos_of_ne_zero (by omega))⟩
+def Fin.nextMod {n : ℕ} (i : Fin n) : Fin n where
+  val := (i.val + 1) % n
+  isLt := Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)
 
 /-- A convex polygon with vertices in counterclockwise order.
     The convexity condition says every consecutive triple turns left. -/
@@ -29,6 +31,6 @@ structure ConvexPolygonCCW (n : ℕ) where
 
 /-- The cross product test: point `q` has non-negative cross product
     with every directed edge of the polygon. -/
-def allCrossNonneg (n : ℕ) (vertices : Fin n → ℝ × ℝ) (q : ℝ × ℝ) : Prop :=
+def allCrossNonneg {n : ℕ} (vertices : Fin n → ℝ × ℝ) (q : ℝ × ℝ) : Prop :=
   ∀ i : Fin n,
     0 ≤ cross2d (vertices i.nextMod - vertices i) (q - vertices i)

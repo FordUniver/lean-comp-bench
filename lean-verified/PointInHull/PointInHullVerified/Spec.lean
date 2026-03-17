@@ -24,7 +24,7 @@ open scoped Convex
 theorem convexHull_subset_halfplanes
     {n : ℕ} (P : ConvexPolygonCCW n) (q : ℝ × ℝ)
     (hq : q ∈ convexHull ℝ (Set.range P.vertices)) :
-    allCrossNonneg n P.vertices q := by
+    allCrossNonneg P.vertices q := by
   sorry -- PROVABLE: ~2-3 days effort
 
 /-- Backward direction: if all cross product conditions hold, the point
@@ -41,7 +41,7 @@ theorem convexHull_subset_halfplanes
     for the proposal. -/
 theorem halfplanes_subset_convexHull
     {n : ℕ} (P : ConvexPolygonCCW n) (q : ℝ × ℝ)
-    (hcross : allCrossNonneg n P.vertices q) :
+    (hcross : allCrossNonneg P.vertices q) :
     q ∈ convexHull ℝ (Set.range P.vertices) := by
   sorry -- RESEARCH-LEVEL: needs fan triangulation
 
@@ -49,5 +49,5 @@ theorem halfplanes_subset_convexHull
 theorem mem_convexHull_iff_allCrossNonneg
     {n : ℕ} (P : ConvexPolygonCCW n) (q : ℝ × ℝ) :
     q ∈ convexHull ℝ (Set.range P.vertices) ↔
-      allCrossNonneg n P.vertices q :=
+      allCrossNonneg P.vertices q :=
   ⟨convexHull_subset_halfplanes P q, halfplanes_subset_convexHull P q⟩
