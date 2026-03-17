@@ -6,3 +6,7 @@ edition = "2021"
 [[bin]]
 name = "bfs_barebones"
 path = "src/bin/bfs_barebones.rs"
+
+[[bin]]
+name = "color_refine_barebones"
+path = "src/bin/color_refine_barebones.rs"

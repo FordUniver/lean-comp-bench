@@ -1,7 +1,11 @@
 name = "Bench"
 version = "0.1.0"
-defaultTargets = ["bfs_barebones"]
+defaultTargets = ["bfs_barebones", "color_refine_barebones"]
 
 [[lean_exe]]
 name = "bfs_barebones"
 root = "BfsBarebones"
+
+[[lean_exe]]
+name = "color_refine_barebones"
+root = "ColorRefineBarebones"
