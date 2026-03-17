@@ -47,17 +47,16 @@ int main(int argc, char **argv) {
   int inside = 0;
   for (int q = 0; q < nq; q++) {
     int64_t x = qx.at(q), y = qy.at(q);
-    bool in = true;
+    bool in_hull = true;
     for (int i = 0; i < np; i++) {
       int j = (i + 1 < np) ? i + 1 : 0;
       int64_t cross = (px.at(j) - px.at(i)) * (y - py.at(i)) -
                       (py.at(j) - py.at(i)) * (x - px.at(i));
       if (cross < 0) {
-        in = false;
-        break;
+        in_hull = false;
       }
     }
-    if (in)
+    if (in_hull)
       inside++;
   }
 

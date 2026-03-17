@@ -25,7 +25,7 @@ Four algorithms from two domains (graph algorithms, polyhedral computation):
 
 ## Principles
 
-Each implementation is intended to be idiomatic and responsible for its language. C++, Rust, and Haskell use bounds-checked array access; Lean uses unchecked access made safe by (sorry) proofs, matching what a fully verified implementation would compile to. All four implementations of each algorithm are structurally identical (same CSR construction, same loop structure, same hash function). Checksums are verified across languages on every run.
+Each implementation is intended to be idiomatic and responsible for its language (see [Caveats](#caveats) for known compromises). C++, Rust, and Haskell use bounds-checked array access; Lean uses unchecked access made safe by (sorry) proofs, matching what a fully verified implementation would compile to. All four implementations of each algorithm are structurally identical (same CSR construction, same loop structure, same hash function). Checksums are verified across languages on every run.
 
 All implementations read the same input files. Timing separates I/O from computation; only compute time is reported.
 
@@ -34,6 +34,7 @@ All implementations read the same input files. Timing separates I/O from computa
 - Lean implementations use `sorry` as a stand-in for real bound proofs. Since proofs are erased at compile time, the resulting binaries are identical to what fully verified code would produce.
 - Lean's `for i in [:n]` compiles to heap-allocated `Nat` arithmetic (a known compiler limitation). Pre-allocated arrays with indexed writes are used where this was identified as a bottleneck.
 - Color refinement uses insertion sort for neighbor colors in all languages. Lean and Haskell lack stdlib slice-sort; C++ and Rust use insertion sort to match, keeping the algorithm identical. This is O(d²) per vertex and affects dense graph performance.
+- Point-in-hull iterates all polygon edges without early exit. Lean's `for` range loop cannot break; all other languages match this behavior for consistency. A real implementation would exit on the first negative cross product.
 - Lean's generated C code does not auto-vectorize. C++ and Rust inner loops may benefit from SIMD.
 - All benchmarks are single-threaded.
 - Results vary between platforms (Apple Silicon vs x86_64 Linux) though ratios are broadly consistent.

@@ -67,7 +67,6 @@ fn main() {
             let cross = (px[j] - px[i]) * (y - py[i]) - (py[j] - py[i]) * (x - px[i]);
             if cross < 0 {
                 is_in = false;
-                break;
             }
         }
         if is_in {

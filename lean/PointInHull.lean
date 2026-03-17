@@ -98,17 +98,16 @@ def main (args : List String) : IO Unit := do
     let x := qx.uget' q
     let y := qy.uget' q
     let mut isIn := true
-    let mut i := 0
-    while isIn && i < np do
-      let j := if i + 1 == np then 0 else i + 1
-      let pxi := px.uget' i
-      let pyi := py.uget' i
-      let pxj := px.uget' j
-      let pyj := py.uget' j
-      let cross := (pxj - pxi) * (y - pyi) - (pyj - pyi) * (x - pxi)
-      if cross < 0 then
-        isIn := false
-      i := i + 1
+    for i in [:np] do
+      if isIn then
+        let j := if i + 1 == np then 0 else i + 1
+        let pxi := px.uget' i
+        let pyi := py.uget' i
+        let pxj := px.uget' j
+        let pyj := py.uget' j
+        let cross := (pxj - pxi) * (y - pyi) - (pyj - pyi) * (x - pxi)
+        if cross < 0 then
+          isIn := false
 
     if isIn then inside := inside + 1
 

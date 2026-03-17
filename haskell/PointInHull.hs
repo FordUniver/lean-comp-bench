@@ -70,8 +70,8 @@ run file = do
             | otherwise = do
                 !x <- MV.read qx q
                 !y <- MV.read qy q
-                let checkEdge !i
-                        | i >= np = return True
+                let checkEdge !i !acc
+                        | i >= np = return acc
                         | otherwise = do
                             let !j = if i + 1 >= np then 0 else i + 1
                             !pxi <- MV.read px i
@@ -79,10 +79,9 @@ run file = do
                             !pxj <- MV.read px j
                             !pyj <- MV.read py j
                             let !cross = (pxj - pxi) * (y - pyi) - (pyj - pyi) * (x - pxi)
-                            if cross < 0
-                                then return False
-                                else checkEdge (i + 1)
-                !isIn <- checkEdge 0
+                            let !acc' = acc && cross >= 0
+                            checkEdge (i + 1) acc'
+                !isIn <- checkEdge 0 True
                 checkQuery (q + 1) (if isIn then count + 1 else count)
     !inside <- checkQuery 0 (0 :: Int)
 
