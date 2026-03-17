@@ -21,6 +21,7 @@ rust/target/
 
 # Lean
 lean/.lake/
+lean-verified/*/.lake/
 
 # Baseline binaries
 baseline/*/c/sort
