@@ -10,3 +10,11 @@ path = "src/bin/bfs_barebones.rs"
 [[bin]]
 name = "color_refine_barebones"
 path = "src/bin/color_refine_barebones.rs"
+
+[[bin]]
+name = "bfs_safe"
+path = "src/bin/bfs_safe.rs"
+
+[[bin]]
+name = "color_refine_safe"
+path = "src/bin/color_refine_safe.rs"
