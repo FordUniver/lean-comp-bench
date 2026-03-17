@@ -79,8 +79,8 @@ fn main() {
         qhead += 1;
         let lo = offset[v] as usize;
         let hi = offset[v + 1] as usize;
-        for i in lo..hi {
-            let w = adj[i] as usize;
+        for &w_raw in &adj[lo..hi] {
+            let w = w_raw as usize;
             if !visited[w] {
                 visited[w] = true;
                 let d = dist[v] + 1;

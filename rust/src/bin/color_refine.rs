@@ -99,8 +99,8 @@ fn main() {
             let mut h: u64 = (color[v] as u64).wrapping_mul(1000003);
             h ^= (deg_v as u64).wrapping_mul(2654435761);
             h = h.wrapping_mul(1000003);
-            for i in 0..deg_v {
-                h ^= (nbuf[i] as u64).wrapping_mul(2654435761);
+            for &nc in &nbuf[..deg_v] {
+                h ^= (nc as u64).wrapping_mul(2654435761);
                 h = h.wrapping_mul(1000003);
             }
             sig_hash[v] = h;
@@ -134,10 +134,7 @@ fn main() {
     }
 
     // Compute checksum
-    let mut checksum: i64 = 0;
-    for v in 0..n {
-        checksum += color[v] as i64;
-    }
+    let checksum: i64 = color.iter().map(|&c| c as i64).sum();
 
     let compute_ms = t1.elapsed().as_secs_f64() * 1000.0;
 
