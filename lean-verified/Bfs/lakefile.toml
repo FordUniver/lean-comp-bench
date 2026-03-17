@@ -1,0 +1,11 @@
+name = "BfsVerified"
+version = "0.1.0"
+defaultTargets = ["BfsVerified"]
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+version = "git#master"
+
+[[lean_lib]]
+name = "BfsVerified"
