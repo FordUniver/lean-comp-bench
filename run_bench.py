@@ -68,7 +68,7 @@ POLYGONS = [
 BENCH_CONFIG = {
     "bfs":           ("graph_",   lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
     "color_refine":  ("graph_",   lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
-    "point_in_hull": ("polygon_", lambda: [p for p in POLYGONS if "1000_" in p and "100k" in p], "inside"),
+    "point_in_hull": ("polygon_", lambda: ["100_100k", "1000_100k", "10000_100k"], "inside"),
     "face_enum":     ("cube_",    lambda: ["5d", "6d", "7d"], "checksum"),
 }
 
