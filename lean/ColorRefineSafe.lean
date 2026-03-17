@@ -1,15 +1,12 @@
--- Color refinement (1-WL) benchmark — barebones (unchecked access via sorry proofs)
+-- Color refinement (1-WL) benchmark — safe (getD for reads, set! for writes)
 -- Input: graph file (n m, then m edges u v)
 -- Output: read=Xms compute=Yms rounds=R colors=C checksum=K
 --
--- Uses a[i]'(by sorry) for reads and a.set i v (by sorry) for writes.
--- sorry proofs are erased at compile time, producing the same machine code
--- as a fully verified program with real bound proofs.
+-- Uses `getD` (returns default on out-of-bounds) for reads and
+-- `set!` (panics on out-of-bounds) for writes. This is the cost of
+-- not having bound proofs — what unverified Lean code pays.
 
 import Std.Data.HashMap
-
-@[inline] def Array.uget' (a : Array α) (i : Nat) : α := a[i]'(by sorry)
-@[inline] def Array.uset' (a : Array α) (i : Nat) (v : α) : Array α := a.set i v (by sorry)
 
 def parseNat (data : ByteArray) (pos : Nat) : Nat × Nat := Id.run do
   let sz := data.size
@@ -59,32 +56,32 @@ def main (args : List String) : IO Unit := do
     pos := p3
     edgeU := edgeU.push u
     edgeV := edgeV.push v
-    deg := deg.uset' u ((deg.uget' u) + 1)
-    deg := deg.uset' v ((deg.uget' v) + 1)
+    deg := deg.set! u ((deg.getD u 0) + 1)
+    deg := deg.set! v ((deg.getD v 0) + 1)
 
   -- Build CSR offset array
   let mut offset := Array.replicate (n + 1) (0 : UInt32)
   let mut cumul : UInt32 := 0
   for i in [:n] do
-    offset := offset.uset' i cumul
-    cumul := cumul + (deg.uget' i)
-  offset := offset.uset' n cumul
+    offset := offset.set! i cumul
+    cumul := cumul + (deg.getD i 0)
+  offset := offset.set! n cumul
 
   let total := cumul.toNat
   let mut adj := Array.replicate total (0 : UInt32)
   let mut adjPos := Array.replicate n (0 : UInt32)
 
   for i in [:m] do
-    let u := edgeU.uget' i
-    let v := edgeV.uget' i
-    let ou := (offset.uget' u).toNat
-    let pu := (adjPos.uget' u).toNat
-    adj := adj.uset' (ou + pu) (UInt32.ofNat v)
-    adjPos := adjPos.uset' u ((adjPos.uget' u) + 1)
-    let ov := (offset.uget' v).toNat
-    let pv := (adjPos.uget' v).toNat
-    adj := adj.uset' (ov + pv) (UInt32.ofNat u)
-    adjPos := adjPos.uset' v ((adjPos.uget' v) + 1)
+    let u := edgeU.getD i 0
+    let v := edgeV.getD i 0
+    let ou := (offset.getD u 0).toNat
+    let pu := (adjPos.getD u 0).toNat
+    adj := adj.set! (ou + pu) (UInt32.ofNat v)
+    adjPos := adjPos.set! u ((adjPos.getD u 0) + 1)
+    let ov := (offset.getD v 0).toNat
+    let pv := (adjPos.getD v 0).toNat
+    adj := adj.set! (ov + pv) (UInt32.ofNat u)
+    adjPos := adjPos.set! v ((adjPos.getD v 0) + 1)
 
   let t1 ← IO.monoNanosNow
   let readNanos := t1 - t0
@@ -99,8 +96,8 @@ def main (args : List String) : IO Unit := do
   -- Find max degree for reusable buffer
   let mut maxDeg : Nat := 0
   for v in [:n] do
-    let lo := (offset.uget' v).toNat
-    let hi := (offset.uget' (v + 1)).toNat
+    let lo := (offset.getD v 0).toNat
+    let hi := (offset.getD (v + 1) 0).toNat
     let d := hi - lo
     if d > maxDeg then maxDeg := d
   let mut nbuf := Array.replicate maxDeg (0 : UInt32)
@@ -111,44 +108,44 @@ def main (args : List String) : IO Unit := do
   for round in [:n] do
     -- Build signature hash for each vertex
     for v in [:n] do
-      let lo := (offset.uget' v).toNat
-      let hi := (offset.uget' (v + 1)).toNat
+      let lo := (offset.getD v 0).toNat
+      let hi := (offset.getD (v + 1) 0).toNat
       let degV := hi - lo
       -- Collect neighbor colors
       for j in [:degV] do
-        let w := (adj.uget' (lo + j)).toNat
-        nbuf := nbuf.uset' j (color.uget' w)
+        let w := (adj.getD (lo + j) 0).toNat
+        nbuf := nbuf.set! j (color.getD w 0)
       -- Sort neighbor colors (insertion sort on the slice)
       for i in [1:degV] do
-        let key := nbuf.uget' i
+        let key := nbuf.getD i 0
         let mut j := i
         while j > 0 do
-          let prev := nbuf.uget' (j - 1)
+          let prev := nbuf.getD (j - 1) 0
           if prev > key then
-            nbuf := nbuf.uset' j prev
+            nbuf := nbuf.set! j prev
             j := j - 1
           else
             break
-        nbuf := nbuf.uset' j key
+        nbuf := nbuf.set! j key
       -- Hash
-      let cv := color.uget' v
+      let cv := color.getD v 0
       let mut h : UInt64 := cv.toUInt64 * 1000003
       h := (h ^^^ (UInt64.ofNat degV * 2654435761)) * 1000003
       for j in [:degV] do
-        let nc := nbuf.uget' j
+        let nc := nbuf.getD j 0
         h := (h ^^^ (nc.toUInt64 * 2654435761)) * 1000003
-      sigHash := sigHash.uset' v h
+      sigHash := sigHash.set! v h
 
     -- Map hashes to consecutive colors
     let mut mapping : Std.HashMap UInt64 UInt32 := {}
     let mut nextId : UInt32 := 0
     for v in [:n] do
-      let h := sigHash.uget' v
+      let h := sigHash.getD v 0
       match mapping[h]? with
       | some cid =>
-        newColor := newColor.uset' v cid
+        newColor := newColor.set! v cid
       | none =>
-        newColor := newColor.uset' v nextId
+        newColor := newColor.set! v nextId
         mapping := mapping.insert h nextId
         nextId := nextId + 1
 
@@ -158,19 +155,19 @@ def main (args : List String) : IO Unit := do
     -- Check stability
     let mut stable := true
     for v in [:n] do
-      if (newColor.uget' v) != (color.uget' v) then
+      if (newColor.getD v 0) != (color.getD v 0) then
         stable := false
         break
     if stable then break
 
     -- Copy newColor -> color
     for v in [:n] do
-      color := color.uset' v (newColor.uget' v)
+      color := color.set! v (newColor.getD v 0)
 
   -- Compute checksum
   let mut checksum : Int64 := 0
   for v in [:n] do
-    checksum := checksum + (color.uget' v).toUInt64.toInt64
+    checksum := checksum + (color.getD v 0).toUInt64.toInt64
 
   let t3 ← IO.monoNanosNow
   let computeNanos := t3 - t2
