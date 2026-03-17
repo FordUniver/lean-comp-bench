@@ -124,19 +124,26 @@ def build():
                      "--quiet"], check=True)
     print("  Rust (all)")
 
-    # Haskell
+    # Haskell (via cabal)
     hs_dir = ROOT / "haskell"
-    hs_pkgs = ["-package", "bytestring", "-package", "vector", "-package", "clock",
-               "-package", "containers", "-package", "unordered-containers", "-package", "hashable"]
-    for src in sorted(hs_dir.glob("*.hs")):
-        name = src.stem
-        out = hs_dir / name
-        result = subprocess.run(["ghc", "-O2"] + hs_pkgs + [str(src), "-o", str(out), "-v0"],
-                                capture_output=True, text=True)
+    if (hs_dir / "bench.cabal").exists():
+        result = subprocess.run(["cabal", "build", "all"], capture_output=True, text=True, cwd=str(hs_dir))
         if result.returncode == 0:
-            print(f"  Haskell {name}")
+            print("  Haskell (all via cabal)")
+            # Symlink cabal binaries to expected paths
+            for bench_name, exe_name in [("bfs", "bfs"), ("color_refine", "color-refine"),
+                                          ("point_in_hull", "point-in-hull"), ("face_enum", "face-enum")]:
+                list_result = subprocess.run(["cabal", "list-bin", exe_name],
+                                              capture_output=True, text=True, cwd=str(hs_dir))
+                if list_result.returncode == 0:
+                    bin_path = list_result.stdout.strip()
+                    # Copy to expected location
+                    target = hs_dir / LANGUAGES["Haskell"][bench_name].name
+                    subprocess.run(["cp", bin_path, str(target)])
         else:
-            print(f"  Haskell {name} SKIP (ghc not found or build failed)")
+            print(f"  Haskell SKIP (cabal build failed: {result.stderr[-200:]})")
+    else:
+        print("  Haskell SKIP (no bench.cabal found)")
 
     # Lean
     result = subprocess.run(["lake", "-d", str(ROOT / "lean"), "build"],

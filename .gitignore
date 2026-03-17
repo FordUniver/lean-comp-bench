@@ -9,11 +9,12 @@ cpp/color_refine
 cpp/point_in_hull
 cpp/face_enum
 
-# Haskell binaries
+# Haskell
 haskell/Bfs
 haskell/ColorRefine
 haskell/PointInHull
 haskell/FaceEnum
+haskell/dist-newstyle/
 
 # Rust
 rust/target/

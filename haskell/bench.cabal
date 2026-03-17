@@ -1,0 +1,32 @@
+cabal-version: 2.4
+name:          bench
+version:       0.1.0
+build-type:    Simple
+
+common deps
+  build-depends:
+    base >= 4.14,
+    bytestring,
+    vector,
+    clock,
+    containers,
+    unordered-containers,
+    hashable
+  default-language: Haskell2010
+  ghc-options: -O2
+
+executable bfs
+  import: deps
+  main-is: Bfs.hs
+
+executable color-refine
+  import: deps
+  main-is: ColorRefine.hs
+
+executable point-in-hull
+  import: deps
+  main-is: PointInHull.hs
+
+executable face-enum
+  import: deps
+  main-is: FaceEnum.hs
