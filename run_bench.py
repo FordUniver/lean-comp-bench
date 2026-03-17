@@ -14,12 +14,10 @@ Usage:
 
 import argparse
 import json
-import os
 import random
 import re
 import subprocess
 import statistics
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -53,22 +51,32 @@ LANGUAGES = {
 }
 
 GRAPHS = [
-    "sparse_100k", "medium_100k", "dense_100k",
-    "sparse_1000k", "medium_1000k",
+    "sparse_100k",
+    "medium_100k",
+    "dense_100k",
+    "sparse_1000k",
+    "medium_1000k",
 ]
 
 POLYGONS = [
-    "100_100k", "100_1000k",
-    "1000_100k", "1000_1000k",
-    "10000_100k", "10000_1000k",
+    "100_100k",
+    "100_1000k",
+    "1000_100k",
+    "1000_1000k",
+    "10000_100k",
+    "10000_1000k",
 ]
 
 # Map benchmark -> (input prefix, default inputs, checksum key)
 BENCH_CONFIG = {
-    "bfs":           ("graph_",   lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
-    "color_refine":  ("graph_",   lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
-    "point_in_hull": ("polygon_", lambda: ["100_100k", "1000_100k", "10000_100k"], "inside"),
-    "face_enum":     ("cube_",    lambda: ["5d", "6d", "7d"], "checksum"),
+    "bfs": ("graph_", lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
+    "color_refine": ("graph_", lambda: [g for g in GRAPHS if "100k" in g], "checksum"),
+    "point_in_hull": (
+        "polygon_",
+        lambda: ["100_100k", "1000_100k", "10000_100k"],
+        "inside",
+    ),
+    "face_enum": ("cube_", lambda: ["5d", "6d", "7d"], "checksum"),
 }
 
 
@@ -86,7 +94,9 @@ def run_once(binary: Path, input_file: Path) -> dict | None:
     try:
         proc = subprocess.run(
             [str(binary), str(input_file)],
-            capture_output=True, text=True, timeout=300,
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         if proc.returncode != 0:
             return None
@@ -115,25 +125,46 @@ def build():
     for src in sorted(cpp_dir.glob("*.cpp")):
         name = src.stem
         out = cpp_dir / name
-        subprocess.run(["c++", "-O2", "-std=c++17", "-o", str(out), str(src)], check=True)
+        subprocess.run(
+            ["c++", "-O2", "-std=c++17", "-o", str(out), str(src)], check=True
+        )
         print(f"  C++ {name}")
 
     # Rust
-    subprocess.run(["cargo", "build", "--release", "--manifest-path", str(ROOT / "rust" / "Cargo.toml"),
-                     "--quiet"], check=True)
+    subprocess.run(
+        [
+            "cargo",
+            "build",
+            "--release",
+            "--manifest-path",
+            str(ROOT / "rust" / "Cargo.toml"),
+            "--quiet",
+        ],
+        check=True,
+    )
     print("  Rust (all)")
 
     # Haskell (via cabal)
     hs_dir = ROOT / "haskell"
     if (hs_dir / "bench.cabal").exists():
-        result = subprocess.run(["cabal", "build", "all"], capture_output=True, text=True, cwd=str(hs_dir))
+        result = subprocess.run(
+            ["cabal", "build", "all"], capture_output=True, text=True, cwd=str(hs_dir)
+        )
         if result.returncode == 0:
             print("  Haskell (all via cabal)")
             # Symlink cabal binaries to expected paths
-            for bench_name, exe_name in [("bfs", "bfs"), ("color_refine", "color-refine"),
-                                          ("point_in_hull", "point-in-hull"), ("face_enum", "face-enum")]:
-                list_result = subprocess.run(["cabal", "list-bin", exe_name],
-                                              capture_output=True, text=True, cwd=str(hs_dir))
+            for bench_name, exe_name in [
+                ("bfs", "bfs"),
+                ("color_refine", "color-refine"),
+                ("point_in_hull", "point-in-hull"),
+                ("face_enum", "face-enum"),
+            ]:
+                list_result = subprocess.run(
+                    ["cabal", "list-bin", exe_name],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(hs_dir),
+                )
                 if list_result.returncode == 0:
                     bin_path = list_result.stdout.strip()
                     # Copy to expected location
@@ -145,8 +176,9 @@ def build():
         print("  Haskell SKIP (no bench.cabal found)")
 
     # Lean
-    result = subprocess.run(["lake", "-d", str(ROOT / "lean"), "build"],
-                            capture_output=True, text=True)
+    result = subprocess.run(
+        ["lake", "-d", str(ROOT / "lean"), "build"], capture_output=True, text=True
+    )
     if result.returncode == 0:
         print("  Lean (all)")
     else:
@@ -163,13 +195,27 @@ def build():
 
 def main():
     parser = argparse.ArgumentParser(description="Run benchmarks")
-    parser.add_argument("--runs", type=int, default=5, help="Number of runs (default: 5)")
-    parser.add_argument("--bench", nargs="*", default=list(BENCH_CONFIG.keys()),
-                        help="Benchmarks to run (default: all)")
-    parser.add_argument("--inputs", nargs="*", default=None,
-                        help="Input names (default: per-benchmark defaults)")
-    parser.add_argument("--warmup", type=int, default=1, help="Warmup runs (default: 1)")
-    parser.add_argument("--build", action="store_true", help="Build all languages before running")
+    parser.add_argument(
+        "--runs", type=int, default=5, help="Number of runs (default: 5)"
+    )
+    parser.add_argument(
+        "--bench",
+        nargs="*",
+        default=list(BENCH_CONFIG.keys()),
+        help="Benchmarks to run (default: all)",
+    )
+    parser.add_argument(
+        "--inputs",
+        nargs="*",
+        default=None,
+        help="Input names (default: per-benchmark defaults)",
+    )
+    parser.add_argument(
+        "--warmup", type=int, default=1, help="Warmup runs (default: 1)"
+    )
+    parser.add_argument(
+        "--build", action="store_true", help="Build all languages before running"
+    )
     args = parser.parse_args()
 
     if args.build:
@@ -218,7 +264,11 @@ def main():
                         results[bench][input_name][lang].append(out["compute"])
 
                 done = run_idx + 1
-                print(f"\r  {bench} / {input_name}: run {done}/{args.runs}", end="", flush=True)
+                print(
+                    f"\r  {bench} / {input_name}: run {done}/{args.runs}",
+                    end="",
+                    flush=True,
+                )
             print()
 
             # Verify checksums match across languages
@@ -235,7 +285,9 @@ def main():
     for bench in args.bench:
         if bench not in results:
             continue
-        print(f"\n{bench.upper().replace('_', ' ')} — compute time (ms), mean ± stddev, {args.runs} runs\n")
+        print(
+            f"\n{bench.upper().replace('_', ' ')} — compute time (ms), mean ± stddev, {args.runs} runs\n"
+        )
 
         graphs = list(results[bench].keys())
         header = "| | " + " | ".join(graphs) + " |"
@@ -251,7 +303,7 @@ def main():
             print(row)
 
         # Lean/C++ ratio
-        print(f"| **Lean/C++** |", end="")
+        print("| **Lean/C++** |", end="")
         for graph in graphs:
             lean_vals = results[bench].get(graph, {}).get("Lean", [])
             cpp_vals = results[bench].get(graph, {}).get("C++", [])

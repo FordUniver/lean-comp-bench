@@ -62,7 +62,7 @@ def gen_polygon_queries(n_poly: int, n_queries: int, seed: int, path: Path):
 
 def gen_cube_incidence(d: int, path: Path):
     """Vertex-facet incidence of d-dimensional hypercube."""
-    n_vertices = 2 ** d
+    n_vertices = 2**d
     n_facets = 2 * d
     with open(path, "w") as f:
         f.write(f"{n_vertices} {n_facets}\n")
@@ -82,9 +82,9 @@ def main():
     print("Graphs:")
     graph_grid = {
         #            medium (100K)              large (1M)
-        "sparse":  [(100_000, 150_000),  (1_000_000, 1_500_000)],
-        "medium":  [(100_000, 500_000),  (1_000_000, 5_000_000)],
-        "dense":   [(100_000, 5_000_000)],
+        "sparse": [(100_000, 150_000), (1_000_000, 1_500_000)],
+        "medium": [(100_000, 500_000), (1_000_000, 5_000_000)],
+        "dense": [(100_000, 5_000_000)],
     }
     for density, sizes in graph_grid.items():
         for n, m in sizes:
@@ -100,9 +100,9 @@ def main():
             name = f"polygon_{np}_{nq // 1000}k.txt"
             gen_polygon_queries(np, nq, seed, out / name)
 
-    # ── Cubes: dimensions 5, 6, 7 ────────────────────────────────────────
+    # ── Cubes: dimensions 6, 7, 8 ────────────────────────────────────────
     print("\nCubes:")
-    for d in [5, 6, 7]:
+    for d in [6, 7, 8]:
         gen_cube_incidence(d, out / f"cube_{d}d.txt")
 
 
