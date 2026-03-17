@@ -2,7 +2,7 @@
 -- Input: incidence file (n_vertices n_facets, then one line per facet)
 -- Output: read=Xms compute=Yms faces=N checksum=K
 --
--- Faces represented as bitsets (pairs of UInt64, up to 128 vertices).
+-- Faces represented as bitsets (8 × UInt64, up to 512 vertices).
 -- Enumerates all faces by closing facets under intersection.
 --
 -- Array access via sorry proofs (stand-in for real bound proofs).
@@ -12,26 +12,54 @@ import Std.Data.HashMap
 @[inline] def Array.uget' (a : Array α) (i : Nat) : α := a[i]'(by sorry)
 @[inline] def Array.uset' (a : Array α) (i : Nat) (v : α) : Array α := a.set i v (by sorry)
 
--- Face as pair of UInt64 (supports up to 128 vertices)
+-- Face as 8 × UInt64 (supports up to 512 vertices)
 structure Face where
-  lo : UInt64
-  hi : UInt64
+  w0 : UInt64
+  w1 : UInt64
+  w2 : UInt64
+  w3 : UInt64
+  w4 : UInt64
+  w5 : UInt64
+  w6 : UInt64
+  w7 : UInt64
   deriving BEq, Hashable
 
 instance : Ord Face where
   compare a b :=
-    match compare a.hi b.hi with
-    | .eq => compare a.lo b.lo
+    match compare a.w7 b.w7 with
+    | .eq => match compare a.w6 b.w6 with
+      | .eq => match compare a.w5 b.w5 with
+        | .eq => match compare a.w4 b.w4 with
+          | .eq => match compare a.w3 b.w3 with
+            | .eq => match compare a.w2 b.w2 with
+              | .eq => match compare a.w1 b.w1 with
+                | .eq => compare a.w0 b.w0
+                | r => r
+              | r => r
+            | r => r
+          | r => r
+        | r => r
+      | r => r
     | r => r
 
-def Face.empty : Face := ⟨0, 0⟩
+def Face.empty : Face := ⟨0, 0, 0, 0, 0, 0, 0, 0⟩
 
 def Face.setBit (f : Face) (v : Nat) : Face :=
-  if v < 64 then ⟨f.lo ||| (1 <<< v.toUInt64), f.hi⟩
-  else ⟨f.lo, f.hi ||| (1 <<< (v - 64).toUInt64)⟩
+  let idx := v / 64
+  let bit := (1 : UInt64) <<< (v % 64).toUInt64
+  match idx with
+  | 0 => { f with w0 := f.w0 ||| bit }
+  | 1 => { f with w1 := f.w1 ||| bit }
+  | 2 => { f with w2 := f.w2 ||| bit }
+  | 3 => { f with w3 := f.w3 ||| bit }
+  | 4 => { f with w4 := f.w4 ||| bit }
+  | 5 => { f with w5 := f.w5 ||| bit }
+  | 6 => { f with w6 := f.w6 ||| bit }
+  | _ => { f with w7 := f.w7 ||| bit }
 
 def Face.intersect (a b : Face) : Face :=
-  ⟨a.lo &&& b.lo, a.hi &&& b.hi⟩
+  ⟨a.w0 &&& b.w0, a.w1 &&& b.w1, a.w2 &&& b.w2, a.w3 &&& b.w3,
+   a.w4 &&& b.w4, a.w5 &&& b.w5, a.w6 &&& b.w6, a.w7 &&& b.w7⟩
 
 -- Popcount via Kernighan's bit-counting
 def popcount64 (x : UInt64) : Nat := Id.run do
@@ -43,7 +71,8 @@ def popcount64 (x : UInt64) : Nat := Id.run do
   return c
 
 def Face.popcount (f : Face) : Nat :=
-  popcount64 f.lo + popcount64 f.hi
+  popcount64 f.w0 + popcount64 f.w1 + popcount64 f.w2 + popcount64 f.w3 +
+  popcount64 f.w4 + popcount64 f.w5 + popcount64 f.w6 + popcount64 f.w7
 
 def parseNat (data : ByteArray) (pos : Nat) : Nat × Nat := Id.run do
   let sz := data.size
@@ -143,7 +172,8 @@ def main (args : List String) : IO Unit := do
     for j in [:processed] do
       let other := worklist.uget' j
       let inter := current.intersect other
-      if inter.lo != 0 || inter.hi != 0 then
+      if inter.w0 != 0 || inter.w1 != 0 || inter.w2 != 0 || inter.w3 != 0 ||
+         inter.w4 != 0 || inter.w5 != 0 || inter.w6 != 0 || inter.w7 != 0 then
         if allFaces[inter]? == none then
           allFaces := allFaces.insert inter ()
           worklist := worklist.push inter

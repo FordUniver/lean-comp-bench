@@ -14,23 +14,53 @@ import Numeric (showFFloat)
 import System.Clock (Clock (Monotonic), getTime, toNanoSecs)
 import System.Environment (getArgs)
 
-data Face = Face {-# UNPACK #-} !Word64 {-# UNPACK #-} !Word64
-    deriving (Eq, Ord)
+data Face = Face
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+    {-# UNPACK #-} !Word64
+
+instance Eq Face where
+    (Face a0 a1 a2 a3 a4 a5 a6 a7) == (Face b0 b1 b2 b3 b4 b5 b6 b7) =
+        a0 == b0 && a1 == b1 && a2 == b2 && a3 == b3
+            && a4 == b4 && a5 == b5 && a6 == b6 && a7 == b7
+
+instance Ord Face where
+    compare (Face a0 a1 a2 a3 a4 a5 a6 a7) (Face b0 b1 b2 b3 b4 b5 b6 b7) =
+        compare a7 b7 <> compare a6 b6 <> compare a5 b5 <> compare a4 b4
+            <> compare a3 b3 <> compare a2 b2 <> compare a1 b1 <> compare a0 b0
 
 emptyFace :: Face
-emptyFace = Face 0 0
+emptyFace = Face 0 0 0 0 0 0 0 0
 
 setBit' :: Face -> Int -> Face
-setBit' (Face lo hi) v
-    | v < 64 = Face (lo .|. shiftL 1 v) hi
-    | otherwise = Face lo (hi .|. shiftL 1 (v - 64))
+setBit' (Face w0 w1 w2 w3 w4 w5 w6 w7) v =
+    let idx = v `div` 64
+        bit = shiftL 1 (v `mod` 64)
+     in case idx of
+            0 -> Face (w0 .|. bit) w1 w2 w3 w4 w5 w6 w7
+            1 -> Face w0 (w1 .|. bit) w2 w3 w4 w5 w6 w7
+            2 -> Face w0 w1 (w2 .|. bit) w3 w4 w5 w6 w7
+            3 -> Face w0 w1 w2 (w3 .|. bit) w4 w5 w6 w7
+            4 -> Face w0 w1 w2 w3 (w4 .|. bit) w5 w6 w7
+            5 -> Face w0 w1 w2 w3 w4 (w5 .|. bit) w6 w7
+            6 -> Face w0 w1 w2 w3 w4 w5 (w6 .|. bit) w7
+            _ -> Face w0 w1 w2 w3 w4 w5 w6 (w7 .|. bit)
 
 intersectFace :: Face -> Face -> Face
-intersectFace (Face lo1 hi1) (Face lo2 hi2) = Face (lo1 .&. lo2) (hi1 .&. hi2)
+intersectFace (Face a0 a1 a2 a3 a4 a5 a6 a7) (Face b0 b1 b2 b3 b4 b5 b6 b7) =
+    Face (a0 .&. b0) (a1 .&. b1) (a2 .&. b2) (a3 .&. b3)
+        (a4 .&. b4) (a5 .&. b5) (a6 .&. b6) (a7 .&. b7)
 {-# INLINE intersectFace #-}
 
 popcountFace :: Face -> Int
-popcountFace (Face lo hi) = popCount lo + popCount hi
+popcountFace (Face w0 w1 w2 w3 w4 w5 w6 w7) =
+    popCount w0 + popCount w1 + popCount w2 + popCount w3
+        + popCount w4 + popCount w5 + popCount w6 + popCount w7
 {-# INLINE popcountFace #-}
 
 parseLine :: BS.ByteString -> Face

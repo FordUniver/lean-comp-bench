@@ -3,7 +3,7 @@
 // vertex indices) Output: read=Xms compute=Yms faces=N checksum=K
 //
 // Enumerates all faces of a polytope by closing facets under intersection.
-// Faces represented as bitsets (up to 128 vertices via two uint64_t).
+// Faces represented as bitsets (up to 512 vertices via eight uint64_t).
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -16,28 +16,46 @@ static double ms_since(Clock::time_point t0) {
   return std::chrono::duration<double, std::milli>(Clock::now() - t0).count();
 }
 
-// Face as pair of uint64_t (supports up to 128 vertices)
+// Face as 8 × uint64_t (supports up to 512 vertices)
 struct Face {
-  uint64_t lo, hi;
+  uint64_t w[8];
   bool operator<(const Face &o) const {
-    return hi < o.hi || (hi == o.hi && lo < o.lo);
+    for (int i = 7; i > 0; i--) {
+      if (w[i] != o.w[i])
+        return w[i] < o.w[i];
+    }
+    return w[0] < o.w[0];
   }
-  bool operator==(const Face &o) const { return lo == o.lo && hi == o.hi; }
+  bool operator==(const Face &o) const {
+    for (int i = 0; i < 8; i++) {
+      if (w[i] != o.w[i])
+        return false;
+    }
+    return true;
+  }
 };
 
 struct FaceHash {
   size_t operator()(const Face &f) const {
-    return std::hash<uint64_t>{}(f.lo) ^
-           (std::hash<uint64_t>{}(f.hi) * 0x9e3779b97f4a7c15ULL);
+    size_t h = std::hash<uint64_t>{}(f.w[0]);
+    for (int i = 1; i < 8; i++)
+      h ^= std::hash<uint64_t>{}(f.w[i]) * (0x9e3779b97f4a7c15ULL + i);
+    return h;
   }
 };
 
 Face face_intersect(const Face &a, const Face &b) {
-  return {a.lo & b.lo, a.hi & b.hi};
+  Face r;
+  for (int i = 0; i < 8; i++)
+    r.w[i] = a.w[i] & b.w[i];
+  return r;
 }
 
 int face_popcount(const Face &f) {
-  return __builtin_popcountll(f.lo) + __builtin_popcountll(f.hi);
+  int c = 0;
+  for (int i = 0; i < 8; i++)
+    c += __builtin_popcountll(f.w[i]);
+  return c;
 }
 
 int main(int argc, char **argv) {
@@ -60,15 +78,14 @@ int main(int argc, char **argv) {
 
   std::vector<Face> facets(nf);
   for (int i = 0; i < nf; i++) {
-    facets.at(i) = {0, 0};
+    facets.at(i) = {};
+    for (int k = 0; k < 8; k++)
+      facets.at(i).w[k] = 0;
     // Read vertices until end of line
     int v;
     char c;
     while (fscanf(f, "%d%c", &v, &c) >= 1) {
-      if (v < 64)
-        facets.at(i).lo |= (1ULL << v);
-      else
-        facets.at(i).hi |= (1ULL << (v - 64));
+      facets.at(i).w[v / 64] |= (1ULL << (v % 64));
       if (c == '\n' || c == '\r')
         break;
     }

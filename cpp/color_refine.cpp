@@ -89,7 +89,16 @@ int main(int argc, char **argv) {
       uint32_t deg_v = hi - lo;
       for (uint32_t i = 0; i < deg_v; i++)
         nbuf.at(i) = color.at(adj.at(lo + i));
-      std::sort(nbuf.begin(), nbuf.begin() + deg_v);
+      // Insertion sort (matches Lean/Haskell which lack stdlib slice-sort)
+      for (uint32_t i = 1; i < deg_v; i++) {
+        uint32_t key = nbuf.at(i);
+        int32_t j = i;
+        while (j > 0 && nbuf.at(j - 1) > key) {
+          nbuf.at(j) = nbuf.at(j - 1);
+          j--;
+        }
+        nbuf.at(j) = key;
+      }
 
       uint64_t h = (uint64_t)color.at(v) * 1000003ULL;
       h = h ^ ((uint64_t)deg_v * 2654435761ULL);

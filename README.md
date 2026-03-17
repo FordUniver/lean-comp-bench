@@ -12,7 +12,7 @@ Four algorithms from two domains (graph algorithms, polyhedral computation):
 
 **Point-in-Convex-Hull (2D).** Test 100K query points for membership in a convex polygon via cross-product sign test. `int64` arithmetic. Polygon sizes: 100, 1000, 10000 vertices.
 
-**Face Enumeration.** Enumerate all faces of a hypercube by closing vertex-facet incidences under pairwise intersection. Faces as 128-bit bitsets. Dimensions: 5 (242 faces), 6 (728 faces), 7 (2186 faces).
+**Face Enumeration.** Enumerate all faces of a hypercube by closing vertex-facet incidences under pairwise intersection. Faces as 512-bit bitsets. Dimensions: 6 (728 faces), 7 (2186 faces), 8 (6560 faces).
 
 ## Languages
 
@@ -33,6 +33,7 @@ All implementations read the same input files. Timing separates I/O from computa
 
 - Lean implementations use `sorry` as a stand-in for real bound proofs. Since proofs are erased at compile time, the resulting binaries are identical to what fully verified code would produce.
 - Lean's `for i in [:n]` compiles to heap-allocated `Nat` arithmetic (a known compiler limitation). Pre-allocated arrays with indexed writes are used where this was identified as a bottleneck.
+- Color refinement uses insertion sort for neighbor colors in all languages. Lean and Haskell lack stdlib slice-sort; C++ and Rust use insertion sort to match, keeping the algorithm identical. This is O(d²) per vertex and affects dense graph performance.
 - Lean's generated C code does not auto-vectorize. C++ and Rust inner loops may benefit from SIMD.
 - All benchmarks are single-threaded.
 - Results vary between platforms (Apple Silicon vs x86_64 Linux) though ratios are broadly consistent.
@@ -46,41 +47,41 @@ Compute time in milliseconds (mean ± stddev, 7 runs). Linux x86_64, single core
 
 | | sparse 100K | medium 100K | dense 100K |
 |---|---:|---:|---:|
-| **C++** | 4.4 ± 0.2 | 5.9 ± 0.1 | 30.1 ± 1.1 |
-| **Rust** | 5.3 ± 0.6 | 6.2 ± 0.1 | 30.4 ± 1.5 |
-| **Haskell** | 4.2 ± 0.2 | 6.7 ± 0.1 | 32.8 ± 1.6 |
-| **Lean** | 24.5 ± 5.7 | 35.6 ± 0.6 | 209.5 ± 3.1 |
-| **Lean/C++** | **5.5x** | **6.1x** | **7.0x** |
+| **C++** | 4.5 ± 0.2 | 5.7 ± 0.2 | 30.4 ± 3.5 |
+| **Rust** | 5.0 ± 0.7 | 5.9 ± 0.2 | 30.2 ± 3.1 |
+| **Haskell** | 4.2 ± 0.3 | 6.5 ± 0.2 | 33.6 ± 3.5 |
+| **Lean** | 21.4 ± 0.8 | 34.7 ± 0.9 | 209.4 ± 12.4 |
+| **Lean/C++** | **4.7x** | **6.1x** | **6.9x** |
 
 ### Color Refinement (1-WL)
 
 | | sparse 100K | medium 100K | dense 100K |
 |---|---:|---:|---:|
-| **C++** | 73.2 ± 0.9 | 61.1 ± 4.8 | 423.9 ± 2.0 |
-| **Rust** | 34.4 ± 0.4 | 38.5 ± 1.0 | 204.8 ± 0.9 |
-| **Haskell** | 256.7 ± 5.7 | 180.1 ± 7.8 | 837.1 ± 4.7 |
-| **Lean** | 214.6 ± 1.7 | 257.6 ± 7.7 | 2327.6 ± 12.5 |
-| **Lean/C++** | **2.9x** | **4.2x** | **5.5x** |
+| **C++** | 70.9 ± 0.7 | 58.2 ± 1.3 | 419.5 ± 1.8 |
+| **Rust** | 34.8 ± 0.7 | 36.7 ± 0.3 | 205.1 ± 5.0 |
+| **Haskell** | 247.7 ± 1.6 | 165.2 ± 1.6 | 829.0 ± 3.8 |
+| **Lean** | 215.0 ± 3.9 | 242.2 ± 2.6 | 2327.8 ± 45.7 |
+| **Lean/C++** | **3.0x** | **4.2x** | **5.5x** |
 
 ### Point-in-Convex-Hull (2D)
 
 | | 100-gon | 1000-gon | 10000-gon |
 |---|---:|---:|---:|
-| **C++** | 10.5 ± 0.2 | 91.1 ± 1.5 | 893.0 ± 4.0 |
-| **Rust** | 8.4 ± 0.8 | 58.7 ± 1.1 | 549.3 ± 5.9 |
-| **Haskell** | 16.3 ± 0.2 | 142.3 ± 2.5 | 1386.0 ± 3.1 |
-| **Lean** | 49.5 ± 1.1 | 428.0 ± 11.2 | 4199.0 ± 71.9 |
+| **C++** | 10.0 ± 0.1 | 90.6 ± 0.9 | 895.7 ± 15.5 |
+| **Rust** | 8.7 ± 0.7 | 57.7 ± 0.8 | 548.9 ± 5.6 |
+| **Haskell** | 16.1 ± 0.3 | 139.8 ± 0.8 | 1395.5 ± 29.7 |
+| **Lean** | 47.6 ± 0.7 | 421.7 ± 2.4 | 4190.4 ± 33.0 |
 | **Lean/C++** | **4.7x** | **4.7x** | **4.7x** |
 
 ### Face Enumeration
 
-| | 5d | 6-cube | 7-cube |
+| | 6-cube | 7-cube | 8-cube |
 |---|---:|---:|---:|
-| **C++** | 1.7 ± 0.1 | 6.5 ± 2.4 | 31.0 ± 5.2 |
-| **Rust** | 0.8 ± 0.1 | 5.8 ± 0.2 | 21.3 ± 2.5 |
-| **Haskell** | 2.3 ± 0.1 | 12.3 ± 0.7 | 50.3 ± 5.4 |
-| **Lean** | 3.5 ± 0.6 | 12.8 ± 0.9 | 70.4 ± 2.2 |
-| **Lean/C++** | **2.1x** | **2.0x** | **2.3x** |
+| **C++** | 8.3 ± 0.6 | 28.8 ± 0.6 | 19.1 ± 0.9 |
+| **Rust** | 5.9 ± 0.1 | 22.5 ± 0.9 | 15.7 ± 0.5 |
+| **Haskell** | 12.4 ± 0.9 | 51.3 ± 1.0 | 51.1 ± 0.7 |
+| **Lean** | 12.4 ± 1.2 | 70.4 ± 0.6 | 35.5 ± 1.6 |
+| **Lean/C++** | **1.5x** | **2.4x** | **1.9x** |
 
 <!-- RESULTS_END -->
 

@@ -16,36 +16,35 @@ fn parse_usize(bytes: &[u8]) -> usize {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 struct Face {
-    hi: u64,
-    lo: u64,
+    w: [u64; 8],
 }
 
 impl Hash for Face {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.lo.hash(state);
-        self.hi.hash(state);
+        self.w.hash(state);
     }
 }
 
 impl Face {
     fn empty() -> Self {
-        Face { lo: 0, hi: 0 }
+        Face { w: [0; 8] }
     }
     fn set_bit(&mut self, v: usize) {
-        if v < 64 {
-            self.lo |= 1u64 << v;
-        } else {
-            self.hi |= 1u64 << (v - 64);
-        }
+        self.w[v / 64] |= 1u64 << (v % 64);
     }
     fn intersect(&self, other: &Face) -> Face {
-        Face {
-            lo: self.lo & other.lo,
-            hi: self.hi & other.hi,
+        let mut r = [0u64; 8];
+        for i in 0..8 {
+            r[i] = self.w[i] & other.w[i];
         }
+        Face { w: r }
     }
     fn popcount(&self) -> u32 {
-        self.lo.count_ones() + self.hi.count_ones()
+        let mut c = 0u32;
+        for i in 0..8 {
+            c += self.w[i].count_ones();
+        }
+        c
     }
 }
 

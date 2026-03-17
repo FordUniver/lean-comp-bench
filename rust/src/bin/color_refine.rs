@@ -94,7 +94,16 @@ fn main() {
                 let w = adj[lo + i] as usize;
                 nbuf[i] = color[w];
             }
-            nbuf[..deg_v].sort_unstable();
+            // Insertion sort (matches Lean/Haskell which lack stdlib slice-sort)
+            for i in 1..deg_v {
+                let key = nbuf[i];
+                let mut j = i;
+                while j > 0 && nbuf[j - 1] > key {
+                    nbuf[j] = nbuf[j - 1];
+                    j -= 1;
+                }
+                nbuf[j] = key;
+            }
 
             let mut h: u64 = (color[v] as u64).wrapping_mul(1000003);
             h ^= (deg_v as u64).wrapping_mul(2654435761);
