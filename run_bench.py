@@ -107,6 +107,54 @@ def fmt_ms(values: list[float]) -> str:
     return f"{mean:.1f} ± {sd:.1f}"
 
 
+def build():
+    """Build all languages."""
+    print("=== Building ===")
+
+    # C++
+    cpp_dir = ROOT / "cpp"
+    for src in sorted(cpp_dir.glob("*.cpp")):
+        name = src.stem
+        out = cpp_dir / name
+        subprocess.run(["c++", "-O2", "-std=c++17", "-o", str(out), str(src)], check=True)
+        print(f"  C++ {name}")
+
+    # Rust
+    subprocess.run(["cargo", "build", "--release", "--manifest-path", str(ROOT / "rust" / "Cargo.toml"),
+                     "--quiet"], check=True)
+    print("  Rust (all)")
+
+    # Haskell
+    hs_dir = ROOT / "haskell"
+    hs_pkgs = ["-package", "bytestring", "-package", "vector", "-package", "clock",
+               "-package", "containers", "-package", "unordered-containers", "-package", "hashable"]
+    for src in sorted(hs_dir.glob("*.hs")):
+        name = src.stem
+        out = hs_dir / name
+        result = subprocess.run(["ghc", "-O2"] + hs_pkgs + [str(src), "-o", str(out), "-v0"],
+                                capture_output=True, text=True)
+        if result.returncode == 0:
+            print(f"  Haskell {name}")
+        else:
+            print(f"  Haskell {name} SKIP (ghc not found or build failed)")
+
+    # Lean
+    result = subprocess.run(["lake", "-d", str(ROOT / "lean"), "build"],
+                            capture_output=True, text=True)
+    if result.returncode == 0:
+        print("  Lean (all)")
+    else:
+        print(f"  Lean FAILED: {result.stderr[-200:]}")
+
+    # Generate inputs if missing
+    input_dir = ROOT / "input"
+    if not list(input_dir.glob("graph_*.txt")):
+        print("\n=== Generating inputs ===")
+        subprocess.run([str(input_dir / "gen_input.py")], check=True)
+
+    print()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run benchmarks")
     parser.add_argument("--runs", type=int, default=5, help="Number of runs (default: 5)")
@@ -115,7 +163,11 @@ def main():
     parser.add_argument("--inputs", nargs="*", default=None,
                         help="Input names (default: per-benchmark defaults)")
     parser.add_argument("--warmup", type=int, default=1, help="Warmup runs (default: 1)")
+    parser.add_argument("--build", action="store_true", help="Build all languages before running")
     args = parser.parse_args()
+
+    if args.build:
+        build()
 
     # Check binaries exist
     for lang, binaries in LANGUAGES.items():

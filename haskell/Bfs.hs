@@ -29,7 +29,7 @@ main = do
     args <- getArgs
     case args of
       [file] -> run file
-      _ -> putStrLn "Usage: bfs_safe <graph_file>"
+      _ -> putStrLn "Usage: bfs <graph_file>"
 
 run :: FilePath -> IO ()
 run file = do

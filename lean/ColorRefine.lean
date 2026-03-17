@@ -39,7 +39,7 @@ def fmtMs (nanos : Nat) : String :=
 def main (args : List String) : IO Unit := do
   let file ← match args with
     | [f] => pure f
-    | _ => IO.eprintln "Usage: color_refine_barebones <graph_file>" *> IO.Process.exit 1
+    | _ => IO.eprintln "Usage: color_refine <graph_file>" *> IO.Process.exit 1
 
   -- ── Read ───────────────────────────────────────────────────────────────
   let t0 ← IO.monoNanosNow

@@ -31,7 +31,7 @@ main = do
     args <- getArgs
     case args of
       [file] -> run file
-      _ -> putStrLn "Usage: color_refine_safe <graph_file>"
+      _ -> putStrLn "Usage: color_refine <graph_file>"
 
 run :: FilePath -> IO ()
 run file = do
