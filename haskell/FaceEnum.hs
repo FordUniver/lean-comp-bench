@@ -4,6 +4,7 @@ module Main where
 
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.Set as Set
+import qualified Data.Vector.Mutable as VM
 import Data.Bits ((.&.), (.|.), shiftL, popCount)
 import Data.Int (Int64)
 import Data.Word (Word64)
@@ -25,9 +26,11 @@ setBit' (Face lo hi) v
 
 intersectFace :: Face -> Face -> Face
 intersectFace (Face lo1 hi1) (Face lo2 hi2) = Face (lo1 .&. lo2) (hi1 .&. hi2)
+{-# INLINE intersectFace #-}
 
 popcountFace :: Face -> Int
 popcountFace (Face lo hi) = popCount lo + popCount hi
+{-# INLINE popcountFace #-}
 
 parseLine :: BS.ByteString -> Face
 parseLine !line = go line emptyFace
@@ -66,30 +69,60 @@ run file = do
 
     t2 <- getTime Monotonic
 
-    allFacesRef <- newIORef (Set.fromList facets)
-    worklistRef <- newIORef facets
-    sizeRef <- newIORef (length facets)
+    -- Growable worklist using boxed mutable vector
+    let initCap = max (nf * 16) 256
+    wl <- VM.new initCap
+    wlRef <- newIORef wl
+    capRef <- newIORef initCap
+    szRef <- newIORef 0
+    allFacesRef <- newIORef Set.empty
 
+    -- Helper: push a face onto the worklist (grow if needed)
+    let push !face = do
+          sz <- readIORef szRef
+          cap <- readIORef capRef
+          curWl <- readIORef wlRef
+          wl' <- if sz >= cap
+                 then do
+                   let cap' = cap * 2
+                   v' <- VM.grow curWl cap
+                   writeIORef capRef cap'
+                   writeIORef wlRef v'
+                   return v'
+                 else return curWl
+          VM.write wl' sz face
+          writeIORef szRef (sz + 1)
+    let addFacets [] = return ()
+        addFacets (f:fs) = do
+          af <- readIORef allFacesRef
+          if Set.member f af
+            then addFacets fs
+            else do
+              writeIORef allFacesRef (Set.insert f af)
+              push f
+              addFacets fs
+    addFacets facets
+
+    -- BFS-style closure
     let processFrom !processed = do
-          sz <- readIORef sizeRef
+          sz <- readIORef szRef
           if processed >= sz then return ()
           else do
-            wl <- readIORef worklistRef
-            let current = wl !! processed
+            wl' <- readIORef wlRef
+            current <- VM.read wl' processed
             let tryJ !j = do
                   if j > processed then processFrom (processed + 1)
                   else do
-                    wl' <- readIORef worklistRef
-                    let other = wl' !! j
-                        inter = intersectFace current other
+                    wl'' <- readIORef wlRef
+                    other <- VM.read wl'' j
+                    let inter = intersectFace current other
                     if popcountFace inter > 0
                       then do
                         af <- readIORef allFacesRef
                         if not (Set.member inter af)
                           then do
                             writeIORef allFacesRef (Set.insert inter af)
-                            modifyIORef' worklistRef (++ [inter])
-                            modifyIORef' sizeRef (+1)
+                            push inter
                             tryJ (j+1)
                           else tryJ (j+1)
                       else tryJ (j+1)
