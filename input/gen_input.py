@@ -2,14 +2,24 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""Generate input files for benchmarks."""
+"""Generate input files for benchmarks.
+
+Graph 3x3 grid: {sparse, medium, dense} × {small, medium, large}
+Polygon 3x3 grid: {polygon size} × {query count}
+Cube: dimensions 5, 6, 7
+"""
 
 import random
-import sys
+import math
 from pathlib import Path
+
 
 def gen_graph(n: int, m: int, seed: int, path: Path):
     """Random simple graph with n vertices, m edges."""
+    max_edges = n * (n - 1) // 2
+    if m > max_edges:
+        print(f"  SKIP {path.name}: m={m} exceeds max edges {max_edges} for n={n}")
+        return
     rng = random.Random(seed)
     edges = set()
     while len(edges) < m:
@@ -21,21 +31,20 @@ def gen_graph(n: int, m: int, seed: int, path: Path):
         f.write(f"{n} {m}\n")
         for u, v in sorted(edges):
             f.write(f"{u} {v}\n")
-    print(f"  {path}: {n} vertices, {m} edges")
+    size_mb = path.stat().st_size / 1e6
+    print(f"  {path.name}: n={n} m={m} ({size_mb:.1f} MB)")
+
 
 def gen_polygon_queries(n_poly: int, n_queries: int, seed: int, path: Path):
     """Convex polygon (regular n-gon scaled to integers) + random query points."""
-    import math
     rng = random.Random(seed)
     scale = 1_000_000
-    # Regular polygon vertices (integer coords)
     poly = []
     for i in range(n_poly):
         angle = 2 * math.pi * i / n_poly
         x = int(scale * math.cos(angle))
         y = int(scale * math.sin(angle))
         poly.append((x, y))
-    # Random query points in bounding box
     queries = []
     for _ in range(n_queries):
         x = rng.randint(-scale * 2, scale * 2)
@@ -47,15 +56,14 @@ def gen_polygon_queries(n_poly: int, n_queries: int, seed: int, path: Path):
             f.write(f"{x} {y}\n")
         for x, y in queries:
             f.write(f"{x} {y}\n")
-    print(f"  {path}: {n_poly}-gon, {n_queries} queries")
+    size_mb = path.stat().st_size / 1e6
+    print(f"  {path.name}: {n_poly}-gon, {n_queries} queries ({size_mb:.1f} MB)")
+
 
 def gen_cube_incidence(d: int, path: Path):
     """Vertex-facet incidence of d-dimensional hypercube."""
     n_vertices = 2 ** d
     n_facets = 2 * d
-    # Vertices are binary strings of length d
-    # Facet 2*i: vertices with bit i = 0
-    # Facet 2*i+1: vertices with bit i = 1
     with open(path, "w") as f:
         f.write(f"{n_vertices} {n_facets}\n")
         for facet in range(n_facets):
@@ -63,14 +71,40 @@ def gen_cube_incidence(d: int, path: Path):
             value = facet % 2
             verts = [v for v in range(n_vertices) if ((v >> coord) & 1) == value]
             f.write(" ".join(str(v) for v in verts) + "\n")
-    print(f"  {path}: {d}-cube, {n_vertices} vertices, {n_facets} facets")
+    print(f"  {path.name}: {d}-cube, {n_vertices} vertices, {n_facets} facets")
+
 
 def main():
     out = Path(__file__).parent
-    print("Generating inputs:")
-    gen_graph(100_000, 500_000, seed=42, path=out / "graph_100k.txt")
-    gen_polygon_queries(1_000, 1_000_000, seed=42, path=out / "polygon_1k_1M.txt")
-    gen_cube_incidence(7, path=out / "cube_7d.txt")
+    seed = 42
+
+    # ── Graphs: 3×3 grid (density × size) ────────────────────────────────
+    print("Graphs:")
+    graph_grid = {
+        #            small (1K)    medium (100K)   large (1M)
+        "sparse":  [(1000, 1500),  (100_000, 150_000),  (1_000_000, 1_500_000)],
+        "medium":  [(1000, 5000),  (100_000, 500_000),  (1_000_000, 5_000_000)],
+        "dense":   [(1000, 50_000),(100_000, 5_000_000),(1_000_000, 50_000_000)],
+    }
+    for density, sizes in graph_grid.items():
+        for n, m in sizes:
+            name = f"graph_{density}_{n // 1000}k.txt"
+            gen_graph(n, m, seed, out / name)
+
+    # ── Polygons: 3×3 grid (polygon size × query count) ──────────────────
+    print("\nPolygons:")
+    poly_sizes = [100, 1_000, 10_000]
+    query_counts = [10_000, 100_000, 1_000_000]
+    for np in poly_sizes:
+        for nq in query_counts:
+            name = f"polygon_{np}_{nq // 1000}k.txt"
+            gen_polygon_queries(np, nq, seed, out / name)
+
+    # ── Cubes: dimensions 5, 6, 7 ────────────────────────────────────────
+    print("\nCubes:")
+    for d in [5, 6, 7]:
+        gen_cube_incidence(d, out / f"cube_{d}d.txt")
+
 
 if __name__ == "__main__":
     main()
