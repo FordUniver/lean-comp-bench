@@ -7,7 +7,6 @@
 #include <cstring>
 #include <chrono>
 #include <vector>
-#include <queue>
 
 using Clock = std::chrono::steady_clock;
 
@@ -59,26 +58,24 @@ int main(int argc, char **argv) {
 
     // BFS from vertex 0
     std::vector<uint32_t> visited(n, 0);
-    std::queue<uint32_t> queue;
+    std::vector<uint32_t> queue(n);
+    uint32_t qhead = 0, qtail = 0;
 
     visited.at(0) = 1;
-    queue.push(0);
+    queue.at(qtail++) = 0;
 
     int64_t dist_sum = 0;
     std::vector<int64_t> dist(n, 0);
-    uint32_t nvisited = 1;
 
-    while (!queue.empty()) {
-        uint32_t v = queue.front();
-        queue.pop();
+    while (qhead < qtail) {
+        uint32_t v = queue.at(qhead++);
         for (uint32_t i = offset.at(v); i < offset.at(v + 1); i++) {
             uint32_t w = adj.at(i);
             if (!visited.at(w)) {
                 visited.at(w) = 1;
                 dist.at(w) = dist.at(v) + 1;
                 dist_sum += dist.at(w);
-                queue.push(w);
-                nvisited++;
+                queue.at(qtail++) = w;
             }
         }
     }
@@ -87,7 +84,7 @@ int main(int argc, char **argv) {
 
     // ── Output ───────────────────────────────────────────────────────────────
     printf("read=%.1fms compute=%.1fms checksum=%lld visited=%u\n",
-           read_ms, compute_ms, (long long)dist_sum, nvisited);
+           read_ms, compute_ms, (long long)dist_sum, qtail);
 
     return 0;
 }

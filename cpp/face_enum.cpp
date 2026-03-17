@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <chrono>
 #include <vector>
-#include <set>
+#include <unordered_set>
 
 using Clock = std::chrono::steady_clock;
 
@@ -23,6 +23,12 @@ struct Face {
         return hi < o.hi || (hi == o.hi && lo < o.lo);
     }
     bool operator==(const Face &o) const { return lo == o.lo && hi == o.hi; }
+};
+
+struct FaceHash {
+    size_t operator()(const Face &f) const {
+        return std::hash<uint64_t>{}(f.lo) ^ (std::hash<uint64_t>{}(f.hi) * 0x9e3779b97f4a7c15ULL);
+    }
 };
 
 Face face_intersect(const Face &a, const Face &b) {
@@ -65,7 +71,7 @@ int main(int argc, char **argv) {
     auto t1 = Clock::now();
 
     // Start with facets, close under intersection
-    std::set<Face> all_faces;
+    std::unordered_set<Face, FaceHash> all_faces;
     std::vector<Face> worklist;
 
     // Add facets

@@ -1,5 +1,6 @@
 // Face enumeration from vertex-facet incidence benchmark
-use std::collections::BTreeSet;
+use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 use std::env;
 use std::fs;
 use std::time::Instant;
@@ -11,8 +12,15 @@ fn parse_usize(bytes: &[u8]) -> usize {
     n
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-struct Face { hi: u64, lo: u64 } // Ord: hi first, then lo
+#[derive(Clone, Copy, PartialEq, Eq)]
+struct Face { hi: u64, lo: u64 }
+
+impl Hash for Face {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.lo.hash(state);
+        self.hi.hash(state);
+    }
+}
 
 impl Face {
     fn empty() -> Self { Face { lo: 0, hi: 0 } }
@@ -58,7 +66,7 @@ fn main() {
     // ── Compute ──────────────────────────────────────────────────────────────
     let t1 = Instant::now();
 
-    let mut all_faces = BTreeSet::new();
+    let mut all_faces = HashSet::new();
     let mut worklist = Vec::new();
 
     for &f in &facets {
