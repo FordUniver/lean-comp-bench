@@ -10,3 +10,7 @@ path = "src/bin/bfs.rs"
 [[bin]]
 name = "color_refine"
 path = "src/bin/color_refine.rs"
+
+[[bin]]
+name = "point_in_hull"
+path = "src/bin/point_in_hull.rs"

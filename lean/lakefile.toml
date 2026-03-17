@@ -1,6 +1,6 @@
 name = "Bench"
 version = "0.1.0"
-defaultTargets = ["bfs", "color_refine"]
+defaultTargets = ["bfs", "color_refine", "point_in_hull"]
 
 [[lean_exe]]
 name = "bfs"
@@ -9,3 +9,7 @@ root = "Bfs"
 [[lean_exe]]
 name = "color_refine"
 root = "ColorRefine"
+
+[[lean_exe]]
+name = "point_in_hull"
+root = "PointInHull"
