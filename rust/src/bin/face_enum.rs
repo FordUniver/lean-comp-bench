@@ -1,19 +1,24 @@
 // Face enumeration from vertex-facet incidence benchmark
 use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
 use std::env;
 use std::fs;
+use std::hash::{Hash, Hasher};
 use std::time::Instant;
 
 #[inline(always)]
 fn parse_usize(bytes: &[u8]) -> usize {
     let mut n: usize = 0;
-    for &b in bytes { n = n * 10 + (b - b'0') as usize; }
+    for &b in bytes {
+        n = n * 10 + (b - b'0') as usize;
+    }
     n
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-struct Face { hi: u64, lo: u64 }
+struct Face {
+    hi: u64,
+    lo: u64,
+}
 
 impl Hash for Face {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -23,13 +28,21 @@ impl Hash for Face {
 }
 
 impl Face {
-    fn empty() -> Self { Face { lo: 0, hi: 0 } }
+    fn empty() -> Self {
+        Face { lo: 0, hi: 0 }
+    }
     fn set_bit(&mut self, v: usize) {
-        if v < 64 { self.lo |= 1u64 << v; }
-        else       { self.hi |= 1u64 << (v - 64); }
+        if v < 64 {
+            self.lo |= 1u64 << v;
+        } else {
+            self.hi |= 1u64 << (v - 64);
+        }
     }
     fn intersect(&self, other: &Face) -> Face {
-        Face { lo: self.lo & other.lo, hi: self.hi & other.hi }
+        Face {
+            lo: self.lo & other.lo,
+            hi: self.hi & other.hi,
+        }
     }
     fn popcount(&self) -> u32 {
         self.lo.count_ones() + self.hi.count_ones()
@@ -38,7 +51,10 @@ impl Face {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 { eprintln!("Usage: {} <incidence_file>", args[0]); std::process::exit(1); }
+    if args.len() < 2 {
+        eprintln!("Usage: {} <incidence_file>", args[0]);
+        std::process::exit(1);
+    }
 
     // ── Read ─────────────────────────────────────────────────────────────────
     let t0 = Instant::now();
@@ -81,11 +97,10 @@ fn main() {
         processed += 1;
         for j in 0..processed {
             let inter = current.intersect(&worklist[j]);
-            if inter.popcount() > 0 {
-                if all_faces.insert(inter) {
+            if inter.popcount() > 0
+                && all_faces.insert(inter) {
                     worklist.push(inter);
                 }
-            }
         }
     }
 
@@ -93,6 +108,11 @@ fn main() {
 
     let compute_ms = t1.elapsed().as_secs_f64() * 1000.0;
 
-    println!("read={:.1}ms compute={:.1}ms faces={} checksum={}",
-             read_ms, compute_ms, all_faces.len(), checksum);
+    println!(
+        "read={:.1}ms compute={:.1}ms faces={} checksum={}",
+        read_ms,
+        compute_ms,
+        all_faces.len(),
+        checksum
+    );
 }

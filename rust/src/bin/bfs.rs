@@ -6,20 +6,26 @@ use std::time::Instant;
 #[inline(always)]
 fn parse_usize(bytes: &[u8]) -> usize {
     let mut n: usize = 0;
-    for &b in bytes { n = n * 10 + (b - b'0') as usize; }
+    for &b in bytes {
+        n = n * 10 + (b - b'0') as usize;
+    }
     n
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 { eprintln!("Usage: {} <graph_file>", args[0]); std::process::exit(1); }
+    if args.len() < 2 {
+        eprintln!("Usage: {} <graph_file>", args[0]);
+        std::process::exit(1);
+    }
 
     // ── Read ─────────────────────────────────────────────────────────────────
     let t0 = Instant::now();
 
     let bytes = fs::read(&args[1]).unwrap();
-    let mut iter = bytes.split(|&b| b == b' ' || b == b'\n' || b == b'\r' || b == b'\t')
-                        .filter(|s| !s.is_empty());
+    let mut iter = bytes
+        .split(|&b| b == b' ' || b == b'\n' || b == b'\r' || b == b'\t')
+        .filter(|s| !s.is_empty());
     let n: usize = parse_usize(iter.next().unwrap());
     let m: usize = parse_usize(iter.next().unwrap());
 
@@ -37,12 +43,15 @@ fn main() {
     }
 
     let mut offset = vec![0u32; n + 1];
-    for i in 0..n { offset[i + 1] = offset[i] + deg[i]; }
+    for i in 0..n {
+        offset[i + 1] = offset[i] + deg[i];
+    }
     let total = offset[n] as usize;
     let mut adj = vec![0u32; total];
     let mut pos = vec![0u32; n];
     for i in 0..m {
-        let u = eu[i]; let v = ev[i];
+        let u = eu[i];
+        let v = ev[i];
         let pu = offset[u] + pos[u];
         adj[pu as usize] = v as u32;
         pos[u] += 1;
@@ -84,6 +93,11 @@ fn main() {
 
     let compute_ms = t1.elapsed().as_secs_f64() * 1000.0;
 
-    println!("read={:.1}ms compute={:.1}ms checksum={} visited={}",
-             read_ms, compute_ms, dist_sum, queue.len());
+    println!(
+        "read={:.1}ms compute={:.1}ms checksum={} visited={}",
+        read_ms,
+        compute_ms,
+        dist_sum,
+        queue.len()
+    );
 }

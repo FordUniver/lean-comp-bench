@@ -7,20 +7,26 @@ use std::time::Instant;
 #[inline(always)]
 fn parse_usize(bytes: &[u8]) -> usize {
     let mut n: usize = 0;
-    for &b in bytes { n = n * 10 + (b - b'0') as usize; }
+    for &b in bytes {
+        n = n * 10 + (b - b'0') as usize;
+    }
     n
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 { eprintln!("Usage: {} <graph_file>", args[0]); std::process::exit(1); }
+    if args.len() < 2 {
+        eprintln!("Usage: {} <graph_file>", args[0]);
+        std::process::exit(1);
+    }
 
     // ── Read ─────────────────────────────────────────────────────────────────
     let t0 = Instant::now();
 
     let bytes = fs::read(&args[1]).unwrap();
-    let mut iter = bytes.split(|&b| b == b' ' || b == b'\n' || b == b'\r' || b == b'\t')
-                        .filter(|s| !s.is_empty());
+    let mut iter = bytes
+        .split(|&b| b == b' ' || b == b'\n' || b == b'\r' || b == b'\t')
+        .filter(|s| !s.is_empty());
     let n: usize = parse_usize(iter.next().unwrap());
     let m: usize = parse_usize(iter.next().unwrap());
 
@@ -38,12 +44,15 @@ fn main() {
     }
 
     let mut offset = vec![0u32; n + 1];
-    for i in 0..n { offset[i + 1] = offset[i] + deg[i]; }
+    for i in 0..n {
+        offset[i + 1] = offset[i] + deg[i];
+    }
     let total = offset[n] as usize;
     let mut adj = vec![0u32; total];
     let mut pos = vec![0u32; n];
     for i in 0..m {
-        let u = eu[i]; let v = ev[i];
+        let u = eu[i];
+        let v = ev[i];
         let pu = offset[u] + pos[u];
         adj[pu as usize] = v as u32;
         pos[u] += 1;
@@ -65,7 +74,9 @@ fn main() {
     let mut max_deg: usize = 0;
     for v in 0..n {
         let d = (offset[v + 1] - offset[v]) as usize;
-        if d > max_deg { max_deg = d; }
+        if d > max_deg {
+            max_deg = d;
+        }
     }
     let mut nbuf = vec![0u32; max_deg];
     let mut mapping: HashMap<u64, u32> = HashMap::with_capacity(n);
@@ -86,10 +97,10 @@ fn main() {
             nbuf[..deg_v].sort_unstable();
 
             let mut h: u64 = (color[v] as u64).wrapping_mul(1000003);
-            h = h ^ (deg_v as u64).wrapping_mul(2654435761);
+            h ^= (deg_v as u64).wrapping_mul(2654435761);
             h = h.wrapping_mul(1000003);
             for i in 0..deg_v {
-                h = h ^ (nbuf[i] as u64).wrapping_mul(2654435761);
+                h ^= (nbuf[i] as u64).wrapping_mul(2654435761);
                 h = h.wrapping_mul(1000003);
             }
             sig_hash[v] = h;
@@ -107,23 +118,31 @@ fn main() {
                 id
             });
             new_color[v] = *id;
-            if *id != color[v] { stable = false; }
+            if *id != color[v] {
+                stable = false;
+            }
         }
 
         rounds = (round + 1) as u32;
         num_colors = next_id;
 
-        if stable { break; }
+        if stable {
+            break;
+        }
 
         std::mem::swap(&mut color, &mut new_color);
     }
 
     // Compute checksum
     let mut checksum: i64 = 0;
-    for v in 0..n { checksum += color[v] as i64; }
+    for v in 0..n {
+        checksum += color[v] as i64;
+    }
 
     let compute_ms = t1.elapsed().as_secs_f64() * 1000.0;
 
-    println!("read={:.1}ms compute={:.1}ms rounds={} colors={} checksum={}",
-             read_ms, compute_ms, rounds, num_colors, checksum);
+    println!(
+        "read={:.1}ms compute={:.1}ms rounds={} colors={} checksum={}",
+        read_ms, compute_ms, rounds, num_colors, checksum
+    );
 }
