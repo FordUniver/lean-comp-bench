@@ -19,10 +19,12 @@ def crossTestInt (polygon : Array (ℤ × ℤ)) (q : ℤ × ℤ)
   let n := polygon.size
   let mut result := true
   for _h : i in [:n] do
-    have hi : i < polygon.size := by sorry -- PROVABLE: from range membership
+    have hi : i < polygon.size := by
+      unfold Membership.mem Std.Legacy.instMembershipNatRange at _h; exact _h.2.1
     let vi := polygon[i]
     let j := if i + 1 = n then 0 else i + 1
-    have hj : j < polygon.size := by sorry -- PROVABLE: from hi + branch analysis
+    have hj : j < polygon.size := by
+      show (if i + 1 = n then 0 else i + 1) < polygon.size; split <;> omega
     let vj := polygon[j]
     let cross := (vj.1 - vi.1) * (q.2 - vi.2) - (vj.2 - vi.2) * (q.1 - vi.1)
     if cross < 0 then
