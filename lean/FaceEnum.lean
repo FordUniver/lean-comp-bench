@@ -143,7 +143,7 @@ def main (args : List String) : IO Unit := do
     for j in [:processed] do
       let other := worklist.uget' j
       let inter := current.intersect other
-      if inter.popcount > 0 then
+      if inter.lo != 0 || inter.hi != 0 then
         if allFaces[inter]? == none then
           allFaces := allFaces.insert inter ()
           worklist := worklist.push inter

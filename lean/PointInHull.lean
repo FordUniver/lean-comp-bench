@@ -100,7 +100,7 @@ def main (args : List String) : IO Unit := do
     let mut isIn := true
     for i in [:np] do
       if isIn then
-        let j := (i + 1) % np
+        let j := if i + 1 == np then 0 else i + 1
         let pxi := px.uget' i
         let pyi := py.uget' i
         let pxj := px.uget' j

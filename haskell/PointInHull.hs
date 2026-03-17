@@ -72,7 +72,7 @@ run file = do
               let checkEdge !i
                     | i >= np   = return True
                     | otherwise = do
-                        let !j = (i + 1) `mod` np
+                        let !j = if i + 1 >= np then 0 else i + 1
                         !pxi <- MV.read px i
                         !pyi <- MV.read py i
                         !pxj <- MV.read px j

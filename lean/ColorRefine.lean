@@ -164,8 +164,9 @@ def main (args : List String) : IO Unit := do
     if stable then break
 
     -- Copy newColor -> color
-    for v in [:n] do
-      color := color.uset' v (newColor.uget' v)
+    let tmp := color
+    color := newColor
+    newColor := tmp
 
   -- Compute checksum
   let mut checksum : Int64 := 0

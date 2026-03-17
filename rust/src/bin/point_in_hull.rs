@@ -55,7 +55,7 @@ fn main() {
         let y = qy[q];
         let mut is_in = true;
         for i in 0..np {
-            let j = (i + 1) % np;
+            let j = if i + 1 < np { i + 1 } else { 0 };
             let cross = (px[j] - px[i]) * (y - py[i])
                       - (py[j] - py[i]) * (x - px[i]);
             if cross < 0 { is_in = false; break; }
