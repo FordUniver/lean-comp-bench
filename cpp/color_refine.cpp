@@ -68,6 +68,8 @@ int main(int argc, char **argv) {
         if (d > max_deg) max_deg = d;
     }
     std::vector<uint32_t> nbuf(max_deg);
+    std::unordered_map<uint64_t, uint32_t> mapping;
+    mapping.reserve(n);
 
     uint32_t rounds = 0;
     uint32_t num_colors = 0;
@@ -91,31 +93,29 @@ int main(int argc, char **argv) {
             sig_hash.at(v) = h;
         }
 
-        // Map hashes to consecutive colors
-        std::unordered_map<uint64_t, uint32_t> mapping;
+        // Map hashes to consecutive colors, track stability
+        mapping.clear();
         uint32_t next_id = 0;
+        bool stable = true;
         for (uint32_t v = 0; v < n; v++) {
             auto it = mapping.find(sig_hash.at(v));
+            uint32_t cid;
             if (it == mapping.end()) {
-                mapping[sig_hash.at(v)] = next_id;
-                new_color.at(v) = next_id;
-                next_id++;
+                cid = next_id;
+                mapping[sig_hash.at(v)] = next_id++;
             } else {
-                new_color.at(v) = it->second;
+                cid = it->second;
             }
+            new_color.at(v) = cid;
+            if (cid != color.at(v)) stable = false;
         }
 
         rounds = round + 1;
         num_colors = next_id;
 
-        // Check stability
-        bool stable = true;
-        for (uint32_t v = 0; v < n; v++) {
-            if (new_color.at(v) != color.at(v)) { stable = false; break; }
-        }
         if (stable) break;
 
-        std::copy(new_color.begin(), new_color.end(), color.begin());
+        std::swap(color, new_color);
     }
 
     // Compute checksum

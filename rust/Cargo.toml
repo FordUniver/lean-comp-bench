@@ -3,6 +3,10 @@ name = "bench"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+lto = "fat"
+codegen-units = 1
+
 [[bin]]
 name = "bfs"
 path = "src/bin/bfs.rs"

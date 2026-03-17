@@ -68,6 +68,7 @@ fn main() {
         if d > max_deg { max_deg = d; }
     }
     let mut nbuf = vec![0u32; max_deg];
+    let mut mapping: HashMap<u64, u32> = HashMap::with_capacity(n);
 
     let mut rounds: u32 = 0;
     let mut num_colors: u32 = 0;
@@ -94,9 +95,10 @@ fn main() {
             sig_hash[v] = h;
         }
 
-        // Map hashes to consecutive colors
-        let mut mapping: HashMap<u64, u32> = HashMap::new();
+        // Map hashes to consecutive colors, track stability
+        mapping.clear();
         let mut next_id: u32 = 0;
+        let mut stable = true;
         for v in 0..n {
             let h = sig_hash[v];
             let id = mapping.entry(h).or_insert_with(|| {
@@ -105,22 +107,15 @@ fn main() {
                 id
             });
             new_color[v] = *id;
+            if *id != color[v] { stable = false; }
         }
 
         rounds = (round + 1) as u32;
         num_colors = next_id;
 
-        // Check stability
-        let mut stable = true;
-        for v in 0..n {
-            if new_color[v] != color[v] {
-                stable = false;
-                break;
-            }
-        }
         if stable { break; }
 
-        color.copy_from_slice(&new_color);
+        std::mem::swap(&mut color, &mut new_color);
     }
 
     // Compute checksum
